@@ -1,0 +1,101 @@
+customer_id,company_name,industry,country,city,segment,contract_type
+1,Thompson PLC,Automotive,UK,Casablanca,Startup,Monthly
+2,Vasquez PLC,Manufacturing,France,Dubai,Startup,Annual
+3,"Cooper, Hill and Johnson",Automotive,Kenya,London,Startup,Monthly
+4,"Mora, Adams and Knox",Retail,Morocco,London,Enterprise,Annual
+5,"Aguilar, Thomas and Hansen",Food & Beverage,Spain,Casablanca,Startup,Annual
+6,Thompson-Hawkins,Automotive,Kenya,Amsterdam,Enterprise,Monthly
+7,Newton PLC,Food & Beverage,Nigeria,Casablanca,Enterprise,Spot
+8,Green-Murray,Electronics,Egypt,Lagos,Enterprise,Annual
+9,Reynolds LLC,Pharma,UK,London,SME,Annual
+10,Maldonado-Gomez,Pharma,Egypt,Barcelona,SME,Annual
+11,Hughes-Vasquez,Automotive,Turkey,Nairobi,Enterprise,Monthly
+12,Davis-Pitts,Retail,Kenya,Lagos,Startup,Spot
+13,Young Inc,Pharma,Spain,Paris,Startup,Annual
+14,"Castaneda, Russell and Holmes",Retail,France,Lagos,Enterprise,Annual
+15,Pena-Sanchez,Retail,NL,Lagos,SME,Spot
+16,Long and Sons,Pharma,UAE,Cairo,SME,Annual
+17,Flowers Ltd,Automotive,Nigeria,London,Startup,Spot
+18,"Frank, Fleming and Leon",Manufacturing,Kenya,Paris,Enterprise,Monthly
+19,Davenport-Powell,Electronics,Nigeria,Nairobi,Enterprise,Spot
+20,Alexander PLC,Pharma,Morocco,Paris,Enterprise,Monthly
+21,York-Taylor,Electronics,Nigeria,London,Enterprise,Spot
+22,Ramirez-Sanchez,Automotive,Egypt,Paris,Startup,Monthly
+23,"Smith, Mckinney and Harris",Electronics,Turkey,Dubai,SME,Annual
+24,"Mills, Cunningham and Sweeney",Manufacturing,Kenya,Nairobi,SME,Spot
+25,"Burke, Lee and Thomas",Food & Beverage,NL,Barcelona,SME,Monthly
+26,Garcia Group,Manufacturing,UAE,Nairobi,SME,Annual
+27,"Holland, Potter and Johnson",Retail,UK,Dubai,Startup,Annual
+28,"Cameron, Weaver and Gallegos",Automotive,NL,Barcelona,Enterprise,Monthly
+29,"Mckay, Hayes and Brown",Electronics,Spain,Istanbul,Startup,Monthly
+30,Rodriguez-Bass,Food & Beverage,Morocco,London,Startup,Spot
+31,Allison LLC,Pharma,Egypt,London,SME,Monthly
+32,Sherman PLC,Manufacturing,Turkey,Casablanca,Startup,Spot
+33,Parrish-Leonard,Pharma,Kenya,Dubai,Startup,Annual
+34,Watson-Wilson,Automotive,Nigeria,Nairobi,Startup,Annual
+35,Harris Ltd,Manufacturing,Egypt,Dubai,Startup,Spot
+36,Ayala-Houston,Retail,Spain,Cairo,SME,Annual
+37,Smith Group,Retail,Egypt,Lagos,Enterprise,Annual
+38,"Lambert, Garner and Nash",Manufacturing,Spain,London,Enterprise,Spot
+39,Cunningham PLC,Electronics,UK,Nairobi,Enterprise,Annual
+40,Lewis-Snyder,Automotive,Turkey,Nairobi,Enterprise,Monthly
+41,Mckay-Smith,Food & Beverage,Spain,Amsterdam,Enterprise,Spot
+42,Whitaker-Robinson,Automotive,France,Lagos,SME,Spot
+43,Ellis and Sons,Automotive,Egypt,Istanbul,Startup,Monthly
+44,Villarreal Inc,Retail,France,Paris,Enterprise,Monthly
+45,"Mccann, Mullen and Bates",Retail,Spain,Nairobi,Enterprise,Spot
+46,"Dixon, Wilson and Sanchez",Manufacturing,Morocco,London,Startup,Spot
+47,Williams-Duran,Retail,France,London,Enterprise,Monthly
+48,"Jackson, Gibson and Alvarado",Retail,Kenya,Paris,SME,Spot
+49,Scott-Neal,Electronics,France,Nairobi,Enterprise,Spot
+50,Mejia-Morales,Food & Beverage,Spain,Istanbul,Enterprise,Monthly
+51,"Wagner, Thomas and Webster",Electronics,France,London,Enterprise,Spot
+52,Duncan-Barrett,Electronics,Egypt,Amsterdam,SME,Monthly
+53,"Ingram, Mcdonald and Gray",Automotive,Morocco,London,Enterprise,Monthly
+54,Cuevas-Santiago,Automotive,Egypt,London,Enterprise,Annual
+55,Chandler-Martinez,Manufacturing,Kenya,Istanbul,Enterprise,Monthly
+56,"Diaz, Moore and Gallegos",Manufacturing,Nigeria,Istanbul,Enterprise,Annual
+57,Mitchell-Johnson,Electronics,Kenya,London,Enterprise,Spot
+58,"Marks, Faulkner and Romero",Food & Beverage,Morocco,London,Enterprise,Annual
+59,Kelly-Reyes,Electronics,Turkey,Istanbul,Enterprise,Monthly
+60,Stephens-Martinez,Retail,UAE,Amsterdam,Enterprise,Monthly
+61,Howard-Dougherty,Pharma,Turkey,Lagos,SME,Spot
+62,Jackson PLC,Automotive,Kenya,Istanbul,Enterprise,Annual
+63,"Rodriguez, Lopez and Wheeler",Pharma,France,Casablanca,Startup,Spot
+64,Tran PLC,Food & Beverage,Morocco,Cairo,Enterprise,Annual
+65,Cervantes Ltd,Food & Beverage,Turkey,Nairobi,Startup,Annual
+66,King LLC,Retail,Kenya,London,Enterprise,Annual
+67,"English, Nelson and Barr",Food & Beverage,UK,Paris,SME,Annual
+68,Hickman-Gordon,Food & Beverage,France,Barcelona,Startup,Annual
+69,Mcclure-Taylor,Food & Beverage,UK,Amsterdam,Startup,Spot
+70,Flowers-Daniels,Food & Beverage,Kenya,Cairo,SME,Annual
+71,Sampson LLC,Automotive,Egypt,Paris,SME,Monthly
+72,"Myers, Sloan and Wilson",Manufacturing,Nigeria,Istanbul,SME,Annual
+73,"Kemp, Hunt and Ferguson",Retail,Turkey,Barcelona,Startup,Annual
+74,Vazquez-Miller,Retail,Kenya,Paris,Startup,Monthly
+75,Barker-Mendoza,Manufacturing,Egypt,London,Enterprise,Monthly
+76,"Miller, Martinez and Fleming",Pharma,UAE,Istanbul,Startup,Spot
+77,Hernandez PLC,Pharma,Spain,Nairobi,Enterprise,Spot
+78,"Clark, Cortez and Torres",Food & Beverage,Nigeria,London,Enterprise,Monthly
+79,"Foster, Roberts and Patterson",Retail,UK,Nairobi,Enterprise,Monthly
+80,Lewis-Rogers,Pharma,Spain,Paris,Startup,Monthly
+81,"Reyes, Cook and Collins",Manufacturing,Nigeria,Nairobi,SME,Monthly
+82,Park PLC,Retail,UK,Amsterdam,SME,Annual
+83,"Young, Cooley and Miller",Retail,Egypt,Dubai,Startup,Monthly
+84,"Gordon, Brooks and Turner",Manufacturing,Turkey,Nairobi,Startup,Monthly
+85,"Hicks, Russell and Morgan",Food & Beverage,Morocco,London,Enterprise,Spot
+86,Petersen Inc,Manufacturing,Kenya,Casablanca,SME,Spot
+87,Cooke and Sons,Food & Beverage,UAE,Amsterdam,Enterprise,Annual
+88,"Hernandez, Cruz and Richards",Pharma,Egypt,Casablanca,SME,Annual
+89,"Esparza, Bell and Martinez",Automotive,France,London,SME,Spot
+90,"Walters, Dunn and Gamble",Electronics,Spain,Dubai,Enterprise,Annual
+91,Edwards-Gallagher,Manufacturing,NL,Casablanca,Enterprise,Spot
+92,"Miller, Thomas and Clark",Pharma,NL,Paris,SME,Annual
+93,Jones-Martin,Automotive,UK,Amsterdam,Enterprise,Monthly
+94,Martinez and Sons,Manufacturing,France,Istanbul,SME,Monthly
+95,Logan LLC,Manufacturing,France,Casablanca,Startup,Annual
+96,Jones-Moore,Electronics,Egypt,Lagos,Enterprise,Monthly
+97,Marshall LLC,Pharma,Kenya,Amsterdam,Startup,Spot
+98,Davis LLC,Pharma,Morocco,London,SME,Annual
+99,Lopez and Sons,Food & Beverage,Nigeria,Casablanca,Enterprise,Spot
+100,Bernard-Phillips,Electronics,Egypt,Cairo,SME,Spot

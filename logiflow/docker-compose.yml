@@ -1,50 +1,30 @@
-
-
 services:
-
-  # PostgreSQL: the data warehouse 
-  # cleandata
   postgres:
     image: postgres:15
     container_name: logiflow_postgres
     environment:
-      POSTGRES_USER: logiflow
-      POSTGRES_PASSWORD: logiflow123
-      POSTGRES_DB: logiflow_dw
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432"       # machine port : container port
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./warehouse/schema.sql:/docker-entrypoint-initdb.d/schema.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U logiflow"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
-  # ── MinIO: the data lake
-  # This is where RAW data lands first
-  # Every CSV/JSON file gets dumped here before processing
   minio:
     image: minio/minio:latest
     container_name: logiflow_minio
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin123
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
-      - "9000:9000"       # API port (used by Python)
-      - "9001:9001"       # Console port (browser UI)
+      - "9000:9000"
+      - "9001:9001"
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
-# Named volumes: persistent storage 
-# Without this, all data disappears when containers stop
 volumes:
   postgres_data:
   minio_data:

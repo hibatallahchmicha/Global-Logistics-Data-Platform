@@ -7,6 +7,8 @@ FLOW: Local CSVs → MinIO bucket → (later: ETL pulls from MinIO)
 
 import os
 from dotenv import load_dotenv
+from minio import Minio
+from minio.error import S3Error
 
 # Load environment variables from .env file
 load_dotenv()
@@ -23,10 +25,20 @@ if not MINIO_ACCESS_KEY or not MINIO_SECRET_KEY:
     raise ValueError(" Missing MinIO credentials! Check your .env file")
 
 
+# Define data directory and files to upload
+DATA_DIR = "ingestion/data"  # Local CSV files are in ingestion/data/
+FILES_TO_UPLOAD = {
+    "raw/customers.csv": "customers.csv",
+    "raw/drivers.csv": "drivers.csv",
+    "raw/shipments.csv": "shipments.csv",
+    "raw/vehicles.csv": "vehicles.csv",
+}
+
+
 # 2 CONNECT TO MINIO
 
 
-print("🔌 Connecting to MinIO...")
+print("Connecting to MinIO...")
 
 try:
     # Create MinIO client
@@ -124,7 +136,7 @@ try:
 
     print("\n All files are in MinIO!")
     print(f" View in browser: http://localhost:9001")
-    print(f"   Login: {MINIO_ACCESS_KEY} / {MINIO_SECRET_KEY}")
+    print(f"   Login: Check your .env file for credentials")
     
 except Exception as e:
     print(f" Error listing bucket contents: {e}")
