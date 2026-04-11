@@ -655,3 +655,14 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def run():
+    """Entry point called by the scheduler"""
+    print("Starting ETL pipeline...")
+    # call your existing main logic here
+    # e.g.: extract() → transform() → load()
+
+if __name__ == "__main__":
+    run()
+

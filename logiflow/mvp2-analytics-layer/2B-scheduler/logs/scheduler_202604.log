@@ -1,0 +1,29 @@
+2026-04-11 22:44:52,508 [INFO] 🔍 JOB STARTED: Data Quality Check
+2026-04-11 22:44:53,165 [ERROR] ❌ JOB FAILED: Quality check error → (psycopg2.OperationalError) connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  password authentication failed for user "None"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-04-11 22:45:24,630 [INFO] 💓 HEARTBEAT — Scheduler is alive | Uptime check: 22:45:24
+2026-04-11 22:45:38,852 [INFO] Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-04-11 22:45:38,853 [INFO] Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-04-11 22:45:38,854 [INFO] Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-04-11 22:45:38,854 [INFO] Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-04-11 22:45:38,854 [INFO] ============================================================
+2026-04-11 22:45:38,854 [INFO] 🚚 LogiFlow Scheduler Started
+2026-04-11 22:45:38,854 [INFO] ============================================================
+2026-04-11 22:46:40,825 [INFO] Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-04-11 22:46:40,826 [INFO] Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-04-11 22:46:40,826 [INFO] Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-04-11 22:46:40,826 [INFO] Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-04-11 22:46:40,826 [INFO] ============================================================
+2026-04-11 22:46:40,827 [INFO] 🚚 LogiFlow Scheduler Started
+2026-04-11 22:46:40,827 [INFO] ============================================================
+2026-04-11 22:46:40,827 [INFO]    📌 Daily ETL Pipeline → next run: Not scheduled yet
+2026-04-11 22:46:40,827 [INFO]    📌 Data Quality Check → next run: Not scheduled yet
+2026-04-11 22:46:40,827 [INFO]    📌 Generate New Shipment Data → next run: Not scheduled yet
+2026-04-11 22:46:40,827 [INFO]    📌 Scheduler Heartbeat → next run: Not scheduled yet
+2026-04-11 22:46:40,828 [INFO] ============================================================
+2026-04-11 22:46:40,829 [INFO] Added job "Daily ETL Pipeline" to job store "default"
+2026-04-11 22:46:40,829 [INFO] Added job "Data Quality Check" to job store "default"
+2026-04-11 22:46:40,829 [INFO] Added job "Generate New Shipment Data" to job store "default"
+2026-04-11 22:46:40,829 [INFO] Added job "Scheduler Heartbeat" to job store "default"
+2026-04-11 22:46:40,830 [INFO] Scheduler started
