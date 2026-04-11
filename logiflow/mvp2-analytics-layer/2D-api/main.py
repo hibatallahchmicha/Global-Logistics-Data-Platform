@@ -1,3 +1,52 @@
+# ── Add this import at top of main.py ──
+import sys
+sys.path.append(os.path.abspath(
+    "../../mvp3-advanced/3A-ml-prediction"
+))
+from predict import predict_single
+from pydantic import BaseModel
+
+# ── Add this endpoint ──
+class ShipmentInput(BaseModel):
+    weight_kg:            float
+    distance_km:          int
+    planned_duration_hrs: float
+    cost_usd:             float
+    weather_condition:    str
+    temperature_celsius:  float
+    wind_speed_kmh:       float
+    experience_years:     int
+    driver_rating:        float
+    license_type:         str
+    vehicle_type:         str
+    vehicle_age_years:    int
+    mileage_km:           int
+    region:               str
+    route_type:           str
+    route_distance:       int
+    month:                int
+    quarter:              int
+    is_weekend:           int
+    weekday:              str
+    segment:              str
+    industry:             str
+
+@app.post("/predict/delay")
+def predict_delay(shipment: ShipmentInput):
+    """
+    Predict if a shipment will be delayed.
+    Returns probability and risk level.
+    """
+    try:
+        result = predict_single(shipment.dict())
+        return result
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=503,
+            detail="Model not trained yet. Run train.py first."
+        )
+
+
 from fastapi import FastAPI, Query, HTTPException
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
