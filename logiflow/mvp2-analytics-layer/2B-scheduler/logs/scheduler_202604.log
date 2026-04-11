@@ -27,3 +27,5 @@
 2026-04-11 22:46:40,829 [INFO] Added job "Generate New Shipment Data" to job store "default"
 2026-04-11 22:46:40,829 [INFO] Added job "Scheduler Heartbeat" to job store "default"
 2026-04-11 22:46:40,830 [INFO] Scheduler started
+2026-04-11 22:56:44,175 [WARNING] Run time of job "Scheduler Heartbeat (trigger: interval[0:10:00], next run at: 2026-04-11 22:56:40 +01)" was missed by 0:00:03.349046
+2026-04-11 23:06:52,962 [WARNING] Run time of job "Scheduler Heartbeat (trigger: interval[0:10:00], next run at: 2026-04-11 23:16:40 +01)" was missed by 0:00:12.135502

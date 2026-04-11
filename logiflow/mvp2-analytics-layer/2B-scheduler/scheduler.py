@@ -12,7 +12,7 @@ sys.path.append(os.path.abspath(
     os.path.join(os.path.dirname(__file__), "../../mvp1-data-pipeline/ingestion")
 ))
 
-load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
+load_dotenv(os.path.join(os.path.dirname(__file__), "../../../.env"))
 
 # ─── Logging setup ────────────────────────────────────────────
 # Logs go to both terminal AND a file so you can review history

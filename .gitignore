@@ -30,3 +30,8 @@ Thumbs.db
 
 # Docker
 .dockerignore
+# Logs
+*.log
+logs/
+
+*.out
