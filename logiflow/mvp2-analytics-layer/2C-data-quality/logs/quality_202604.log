@@ -1,0 +1,88 @@
+2026-04-11 22:55:25,989 [INFO] =======================================================
+2026-04-11 22:55:25,989 [INFO] 🔍 LogiFlow — Data Quality Report
+2026-04-11 22:55:25,990 [INFO]    Run at: 2026-04-11 22:55:25
+2026-04-11 22:55:25,990 [INFO] =======================================================
+2026-04-11 22:57:03,674 [INFO] =======================================================
+2026-04-11 22:57:03,674 [INFO] 🔍 LogiFlow — Data Quality Report
+2026-04-11 22:57:03,674 [INFO]    Run at: 2026-04-11 22:57:03
+2026-04-11 22:57:03,674 [INFO] =======================================================
+2026-04-11 22:57:03,845 [INFO] ── Check 1: Row Counts ──────────────────────
+2026-04-11 22:57:03,849 [INFO]    ✅ fact_shipments: 10,000 rows
+2026-04-11 22:57:03,850 [INFO]    ✅ dim_customer: 100 rows
+2026-04-11 22:57:03,852 [INFO]    ✅ dim_driver: 50 rows
+2026-04-11 22:57:03,853 [INFO]    ✅ dim_vehicle: 30 rows
+2026-04-11 22:57:03,854 [INFO]    ✅ dim_route: 10 rows
+2026-04-11 22:57:03,856 [INFO]    ✅ dim_date: 733 rows
+2026-04-11 22:57:03,856 [INFO] ── Check 2: NULL Foreign Keys ───────────────
+2026-04-11 22:57:03,867 [INFO]    ✅ No NULL foreign keys
+2026-04-11 22:57:03,868 [INFO] ── Check 3: Invalid Status Values ───────────
+2026-04-11 22:57:03,872 [INFO]    ✅ All status values are valid
+2026-04-11 22:57:03,873 [INFO] ── Check 4: Negative Numeric Values ─────────
+2026-04-11 22:57:03,877 [INFO]    ✅ cost_usd: no negatives
+2026-04-11 22:57:03,880 [INFO]    ✅ weight_kg: no negatives
+2026-04-11 22:57:03,883 [INFO]    ✅ distance_km: no negatives
+2026-04-11 22:57:03,886 [INFO]    ✅ fuel_consumed_liters: no negatives
+2026-04-11 22:57:03,886 [INFO] ── Check 5: Delay Flag Consistency ──────────
+2026-04-11 22:57:03,892 [WARNING]    ❌ 18 rows where flag doesn't match delay_minutes
+2026-04-11 22:57:03,895 [INFO] ── Check 6: Driver Ratings Range ────────────
+2026-04-11 22:57:03,897 [INFO]    ✅ All driver ratings are in range [1.0 – 5.0]
+2026-04-11 22:57:03,898 [INFO] ── Check 7: Orphan Records ───────────────────
+2026-04-11 22:57:03,902 [INFO]    ✅ customer_id: no orphans
+2026-04-11 22:57:03,905 [INFO]    ✅ driver_id: no orphans
+2026-04-11 22:57:03,908 [INFO]    ✅ vehicle_id: no orphans
+2026-04-11 22:57:03,911 [INFO]    ✅ route_id: no orphans
+2026-04-11 22:57:03,912 [INFO] ── Check 8: Duplicate Shipments ─────────────
+2026-04-11 22:57:03,921 [WARNING]    ❌ 12 duplicate (customer, pickup_time) combinations
+2026-04-11 22:57:03,922 [INFO] =======================================================
+2026-04-11 22:57:03,922 [INFO] 📋 RESULT: 6/8 checks passed
+2026-04-11 22:57:03,923 [INFO]    ✅ row_counts
+2026-04-11 22:57:03,923 [INFO]    ✅ null_foreign_keys
+2026-04-11 22:57:03,923 [INFO]    ✅ invalid_status
+2026-04-11 22:57:03,924 [INFO]    ✅ negative_values
+2026-04-11 22:57:03,924 [INFO]    ❌ delay_consistency
+2026-04-11 22:57:03,925 [INFO]    ✅ driver_ratings
+2026-04-11 22:57:03,925 [INFO]    ✅ orphan_records
+2026-04-11 22:57:03,925 [INFO]    ❌ duplicates
+2026-04-11 22:57:03,926 [INFO] =======================================================
+2026-04-11 22:59:21,268 [INFO] =======================================================
+2026-04-11 22:59:21,269 [INFO] LogiFlow - Data Quality Report
+2026-04-11 22:59:21,269 [INFO]    Run at: 2026-04-11 22:59:21
+2026-04-11 22:59:21,269 [INFO] =======================================================
+2026-04-11 22:59:21,436 [INFO] ── Check 1: Row Counts ──────────────────────
+2026-04-11 22:59:21,438 [INFO]    PASS fact_shipments: 10,000 rows
+2026-04-11 22:59:21,439 [INFO]    PASS dim_customer: 100 rows
+2026-04-11 22:59:21,439 [INFO]    PASS dim_driver: 50 rows
+2026-04-11 22:59:21,440 [INFO]    PASS dim_vehicle: 30 rows
+2026-04-11 22:59:21,440 [INFO]    PASS dim_route: 10 rows
+2026-04-11 22:59:21,441 [INFO]    PASS dim_date: 733 rows
+2026-04-11 22:59:21,441 [INFO] ── Check 2: NULL Foreign Keys ───────────────
+2026-04-11 22:59:21,443 [INFO]    PASS No NULL foreign keys
+2026-04-11 22:59:21,443 [INFO] ── Check 3: Invalid Status Values ───────────
+2026-04-11 22:59:21,444 [INFO]    PASS All status values are valid
+2026-04-11 22:59:21,445 [INFO] ── Check 4: Negative Numeric Values ─────────
+2026-04-11 22:59:21,447 [INFO]    PASS cost_usd: no negatives
+2026-04-11 22:59:21,449 [INFO]    PASS weight_kg: no negatives
+2026-04-11 22:59:21,451 [INFO]    PASS distance_km: no negatives
+2026-04-11 22:59:21,455 [INFO]    PASS fuel_consumed_liters: no negatives
+2026-04-11 22:59:21,455 [INFO] ── Check 5: Delay Flag Consistency ──────────
+2026-04-11 22:59:21,458 [WARNING]    FAIL 18 rows where flag doesn't match delay_minutes
+2026-04-11 22:59:21,458 [INFO] ── Check 6: Driver Ratings Range ────────────
+2026-04-11 22:59:21,460 [INFO]    PASS All driver ratings are in range [1.0 – 5.0]
+2026-04-11 22:59:21,460 [INFO] ── Check 7: Orphan Records ───────────────────
+2026-04-11 22:59:21,463 [INFO]    PASS customer_id: no orphans
+2026-04-11 22:59:21,466 [INFO]    PASS driver_id: no orphans
+2026-04-11 22:59:21,470 [INFO]    PASS vehicle_id: no orphans
+2026-04-11 22:59:21,473 [INFO]    PASS route_id: no orphans
+2026-04-11 22:59:21,474 [INFO] ── Check 8: Duplicate Shipments ─────────────
+2026-04-11 22:59:21,481 [WARNING]    FAIL 12 duplicate (customer, pickup_time) combinations
+2026-04-11 22:59:21,482 [INFO] =======================================================
+2026-04-11 22:59:21,482 [INFO] RESULT: 6/8 checks passed
+2026-04-11 22:59:21,483 [INFO]    PASS row_counts
+2026-04-11 22:59:21,483 [INFO]    PASS null_foreign_keys
+2026-04-11 22:59:21,483 [INFO]    PASS invalid_status
+2026-04-11 22:59:21,484 [INFO]    PASS negative_values
+2026-04-11 22:59:21,484 [INFO]    FAIL delay_consistency
+2026-04-11 22:59:21,484 [INFO]    PASS driver_ratings
+2026-04-11 22:59:21,484 [INFO]    PASS orphan_records
+2026-04-11 22:59:21,485 [INFO]    FAIL duplicates
+2026-04-11 22:59:21,485 [INFO] =======================================================
