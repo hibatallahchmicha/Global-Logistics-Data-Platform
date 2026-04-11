@@ -35,3 +35,9 @@ Thumbs.db
 logs/
 
 *.out
+# Scheduler / logs
+logs/
+scheduler_logs/
+*.log
+logiflow/mvp2-analytics-layer/2B-scheduler/logs/
+
