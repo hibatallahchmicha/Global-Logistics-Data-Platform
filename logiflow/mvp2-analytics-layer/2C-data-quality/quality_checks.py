@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
-load_dotenv(os.path.join(os.path.dirname(__file__), "../../../.env"))
+load_dotenv("/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/.env")
 
 os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
