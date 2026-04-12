@@ -7,7 +7,9 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 # ─── Fix: point directly to where the .env actually lives ─────
-load_dotenv("/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/mvp3-advanced/3A-ml-prediction/.env")
+from pathlib import Path
+env_path = Path(__file__).parent.parent.parent / ".env"
+load_dotenv(env_path)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)
@@ -267,7 +269,10 @@ def save_batch(df: pd.DataFrame, output_dir: str = "data") -> str:
 
 if __name__ == "__main__":
     df   = generate_batch(n=100, days_back=7)
-    path = save_batch(df)
+    path = save_batch(
+    df,
+    output_dir=r"/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/mvp3-advanced/3B-real-data/data"
+)
 
     print(f"\n✅ Generated {len(df)} shipments")
     print(f"   🌧  Delayed : {df['is_delayed'].sum()} ({df['is_delayed'].mean()*100:.1f}%)")
