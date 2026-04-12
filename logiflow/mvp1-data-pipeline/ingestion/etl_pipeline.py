@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 
 # Load environment variables
-load_dotenv()
+load_dotenv("/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/.env")
 
 
 # 1. CONFIGURATION

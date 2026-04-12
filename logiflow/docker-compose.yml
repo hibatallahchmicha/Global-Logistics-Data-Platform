@@ -2,6 +2,8 @@ services:
   postgres:
     image: postgres:15
     container_name: logiflow_postgres
+    env_file:
+      - .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -10,11 +12,14 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./warehouse/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - ./mvp1-data-pipeline/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    restart: unless-stopped
 
   minio:
     image: minio/minio:latest
     container_name: logiflow_minio
+    env_file:
+      - .env
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
@@ -24,6 +29,7 @@ services:
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
+    restart: unless-stopped
 
 volumes:
   postgres_data:

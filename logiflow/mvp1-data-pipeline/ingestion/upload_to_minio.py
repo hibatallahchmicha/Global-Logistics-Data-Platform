@@ -11,10 +11,9 @@ from minio import Minio
 from minio.error import S3Error
 
 # Load environment variables from .env file
-load_dotenv()
+load_dotenv("/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/.env")
 
 # 1 CONFIGURATION — Load from environment (SECURE)
-
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9000")
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
@@ -26,7 +25,7 @@ if not MINIO_ACCESS_KEY or not MINIO_SECRET_KEY:
 
 
 # Define data directory and files to upload
-DATA_DIR = "ingestion/data"  # Local CSV files are in ingestion/data/
+DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 FILES_TO_UPLOAD = {
     "raw/customers.csv": "customers.csv",
     "raw/drivers.csv": "drivers.csv",
