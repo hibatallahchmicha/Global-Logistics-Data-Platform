@@ -21,7 +21,7 @@ from sklearn.metrics import (
 from xgboost import XGBClassifier
 
 load_dotenv("/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/mvp3-advanced/3A-ml-prediction/.env")
-os.makedirs("models",  exist_ok=True)
+os.makedirs("logiflow/mvp3-advanced/3A-ml-prediction/models",  exist_ok=True)
 os.makedirs("reports", exist_ok=True)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -88,7 +88,7 @@ def load_data() -> pd.DataFrame:
         JOIN dim_customer c  ON f.customer_id = c.customer_id
     """
     df = pd.read_sql(query, engine)
-    log.info(f"✅ Loaded {len(df):,} rows for training")
+    log.info(f" Loaded {len(df):,} rows for training")
     return df
 
 
@@ -122,7 +122,7 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def encode_features(df: pd.DataFrame):
-    log.info("🔤 Encoding categorical features...")
+    log.info(" Encoding categorical features...")
 
     categorical_cols = [
         "weather_condition", "license_type", "vehicle_type",
@@ -173,7 +173,7 @@ def train_models(X_train, X_test, y_train, y_test):
             "y_pred":   y_pred,
             "y_proba":  y_proba,
         }
-        log.info(f"   ✅ {name}: Accuracy={acc:.3f} | ROC-AUC={roc_auc:.3f} | CV={cv:.3f}")
+        log.info(f"    {name}: Accuracy={acc:.3f} | ROC-AUC={roc_auc:.3f} | CV={cv:.3f}")
 
     return results
 
@@ -183,7 +183,7 @@ def train_models(X_train, X_test, y_train, y_test):
 # ══════════════════════════════════════════════════════════════
 
 def plot_results(results, X_train, feature_names, y_test):
-    log.info("📊 Generating evaluation plots...")
+    log.info(" Generating evaluation plots...")
 
     fig, axes = plt.subplots(2, 2, figsize=(16, 12))
     fig.suptitle("LogiFlow — Delay Prediction Model Evaluation", fontsize=16, fontweight="bold")
