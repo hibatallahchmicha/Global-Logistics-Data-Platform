@@ -77,6 +77,30 @@ services:
     command: bash /entrypoint.sh
     restart: unless-stopped
 
+  # ── MVP 3: REST API + ML Prediction ──────────────────────────────────────
+  api:
+    build:
+      context: ./mvp2-analytics-layer/2D-api
+      dockerfile: Dockerfile
+    container_name: logiflow_api
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      MODEL_PATH: /app/mvp3-advanced/3A-ml-prediction/models/delay_predictor.pkl
+    volumes:
+      # Mount ML module so predict.py and the trained model are accessible
+      - ./mvp3-advanced/3A-ml-prediction:/app/mvp3-advanced/3A-ml-prediction:ro
+    ports:
+      - "8000:8000"
+    networks:
+      - logiflow_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
 networks:
   logiflow_net:
     driver: bridge

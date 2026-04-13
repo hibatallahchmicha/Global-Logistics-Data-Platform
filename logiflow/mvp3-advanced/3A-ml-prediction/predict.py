@@ -6,7 +6,9 @@ from datetime import datetime
 
 from pathlib import Path
 
-MODEL_PATH = Path("/opt/airflow/project/mvp3-advanced/3A-ml-prediction/models/delay_predictor.pkl")
+# Allow override via env var so the API container can point to the mounted volume
+_default = Path(__file__).resolve().parent / "models" / "delay_predictor.pkl"
+MODEL_PATH = Path(os.getenv("MODEL_PATH", str(_default)))
 
 
 def load_model():

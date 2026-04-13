@@ -2,16 +2,17 @@ from fastapi import FastAPI, Query, HTTPException
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 from pydantic import BaseModel
+from pathlib import Path
 import pandas as pd
 import sys
 import os
 
-# ─── Fix: absolute paths ──────────────────────────────────────
-load_dotenv("/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/.env")
+# Works both locally and inside Docker (reads env already injected by compose)
+load_dotenv()
 
-sys.path.append(
-    "/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/mvp3-advanced/3A-ml-prediction"
-)
+# Add ML prediction module to path — works from any working directory
+ML_DIR = Path(__file__).resolve().parents[2] / "mvp3-advanced" / "3A-ml-prediction"
+sys.path.insert(0, str(ML_DIR))
 
 app = FastAPI(
     title="LogiFlow API",
