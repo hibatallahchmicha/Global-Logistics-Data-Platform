@@ -11,7 +11,7 @@ from minio import Minio
 from minio.error import S3Error
 
 # Load environment variables from .env file
-load_dotenv("/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/.env")
+load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
 
 # 1 CONFIGURATION — Load from environment (SECURE)
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "localhost:9000")

@@ -45,7 +45,7 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-      AIRFLOW__WEBSERVER__SECRET_KEY: logiflow_secret_key_2026
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY}
       AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
       POSTGRES_HOST: postgres
       MINIO_ENDPOINT: minio:9000

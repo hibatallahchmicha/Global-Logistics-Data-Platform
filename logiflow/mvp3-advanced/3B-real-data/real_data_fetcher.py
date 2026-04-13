@@ -260,12 +260,14 @@ def generate_batch(n: int = 50, days_back: int = 1) -> pd.DataFrame:
 
 def save_batch(df: pd.DataFrame, output_dir: str = "data") -> str:
     os.makedirs(output_dir, exist_ok=True)
-    filename = f"real_shipments_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    
+    filename = "real_shipments.csv"   # ← fixed name
     path     = os.path.join(output_dir, filename)
+    
     df.to_csv(path, index=False)
-    log.info(f"💾 Saved → {path}")
+    log.info(f"💾 Saved (overwritten) → {path}")
+    
     return path
-
 
 if __name__ == "__main__":
     df   = generate_batch(n=100, days_back=7)
