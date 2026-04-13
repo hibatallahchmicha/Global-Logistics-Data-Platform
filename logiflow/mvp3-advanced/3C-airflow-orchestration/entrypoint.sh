@@ -10,7 +10,8 @@ pip install --quiet \
     pandas numpy faker minio \
     scikit-learn xgboost joblib \
     python-dotenv sqlalchemy \
-    psycopg2-binary requests
+    psycopg2-binary requests \
+    matplotlib seaborn
 echo "✅ Packages installed"
 
 # Step 2 — Wait for PostgreSQL
