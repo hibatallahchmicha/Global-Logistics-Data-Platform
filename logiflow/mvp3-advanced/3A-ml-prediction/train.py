@@ -4,6 +4,8 @@ import joblib
 import logging
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')   # headless backend — must be set before pyplot import
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
@@ -20,15 +22,19 @@ from sklearn.metrics import (
 )
 from xgboost import XGBClassifier
 
-load_dotenv("/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/mvp3-advanced/3A-ml-prediction/.env")
+load_dotenv()   # reads env vars already injected by Docker / Airflow
 
 
 from pathlib import Path
 
-BASE_DIR = Path("/opt/airflow/project/mvp3-advanced/3A-ml-prediction")
+BASE_DIR = Path(__file__).resolve().parent
 
 MODELS_DIR  = BASE_DIR / "models"
 REPORTS_DIR = BASE_DIR / "reports"
+
+# Ensure output directories exist before any write attempt
+MODELS_DIR.mkdir(parents=True, exist_ok=True)
+REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)

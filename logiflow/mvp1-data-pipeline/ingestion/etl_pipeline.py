@@ -9,14 +9,15 @@ Flow:
 
 import os
 import io
+import sys
 import pandas as pd
 import psycopg2
 from minio import Minio
 from dotenv import load_dotenv
 from datetime import datetime
 
-# Load environment variables
-load_dotenv("/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/.env")
+# Load environment variables (from container env; .env loaded by docker-compose)
+load_dotenv()
 
 
 # 1. CONFIGURATION
@@ -460,7 +461,20 @@ def load_to_postgres(transformed_data):
             ON CONFLICT (vehicle_id) DO NOTHING;
         """
         
-        records = vehicles[["vehicle_id", "plate_number", "vehicle_type", "capacity_kg", "manufacture_year", "mileage_km", "last_service_date", "is_active"]].fillna('').values.tolist()
+        # Convert last_service_date so NaN becomes None (not empty string)
+        vehicles["last_service_date"] = pd.to_datetime(vehicles["last_service_date"], errors="coerce")
+        records = []
+        for _, row in vehicles.iterrows():
+            records.append([
+                int(row["vehicle_id"]) if pd.notna(row["vehicle_id"]) else None,
+                str(row["plate_number"]) if pd.notna(row["plate_number"]) else "",
+                str(row["vehicle_type"]) if pd.notna(row["vehicle_type"]) else "",
+                int(row["capacity_kg"]) if pd.notna(row["capacity_kg"]) else 0,
+                int(row["manufacture_year"]) if pd.notna(row["manufacture_year"]) else 0,
+                int(row["mileage_km"]) if pd.notna(row["mileage_km"]) else 0,
+                row["last_service_date"].date() if pd.notna(row["last_service_date"]) else None,
+                bool(row["is_active"]) if pd.notna(row["is_active"]) else True,
+            ])
         cursor.executemany(insert_query, records)
         print(f"   [OK] Inserted {cursor.rowcount} vehicles")
         
@@ -632,19 +646,19 @@ def main():
     dataframes = extract_from_minio()
     if not dataframes:
         print("\n[ERROR] ETL pipeline failed at EXTRACT step")
-        return
+        sys.exit(1)
     
     # Step 2: Transform
     transformed_data = transform_data(dataframes)
     if not transformed_data:
         print("\n[ERROR] ETL pipeline failed at TRANSFORM step")
-        return
+        sys.exit(1)
     
     # Step 3: Load
     success = load_to_postgres(transformed_data)
     if not success:
         print("\n[ERROR] ETL pipeline failed at LOAD step")
-        return
+        sys.exit(1)
     
     # Step 4: Verify
     verify_load()
@@ -657,14 +671,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-def run():
-    """Entry point called by the scheduler"""
-    print("Starting ETL pipeline...")
-    # call your existing main logic here
-    # e.g.: extract() → transform() → load()
-
-if __name__ == "__main__":
-    run()
 
