@@ -259,7 +259,15 @@ def generate_batch(n: int = 50, days_back: int = 1) -> pd.DataFrame:
 
 
 def save_batch(df: pd.DataFrame, output_dir: str = "data") -> str:
+    import glob
     os.makedirs(output_dir, exist_ok=True)
+
+    # Remove any previously generated files so the folder always holds the latest batch
+    old_files = glob.glob(os.path.join(output_dir, "real_shipments_*.csv"))
+    for old_f in old_files:
+        os.remove(old_f)
+        log.info(f"🗑️  Deleted old file: {old_f}")
+
     filename = f"real_shipments_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     path     = os.path.join(output_dir, filename)
     df.to_csv(path, index=False)

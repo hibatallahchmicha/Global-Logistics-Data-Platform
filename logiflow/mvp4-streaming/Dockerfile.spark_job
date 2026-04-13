@@ -1,0 +1,18 @@
+# Spark Structured Streaming job
+# Bitnami Spark 3.5 includes Java + PySpark; spark-submit downloads
+# the Kafka connector and PostgreSQL JDBC driver on first run via --packages.
+FROM bitnami/spark:3.5
+
+USER root
+
+COPY spark_streaming.py /app/spark_streaming.py
+
+# spark-submit entry point — packages are downloaded once and cached
+CMD [ \
+  "spark-submit", \
+  "--master", "spark://spark-master:7077", \
+  "--packages", \
+    "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,org.postgresql:postgresql:42.7.1", \
+  "--conf", "spark.sql.shuffle.partitions=4", \
+  "/app/spark_streaming.py" \
+]

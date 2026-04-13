@@ -122,3 +122,36 @@ CREATE INDEX IF NOT EXISTS idx_shipments_status
     ON fact_shipments(status);
 CREATE INDEX IF NOT EXISTS idx_shipments_is_delayed
     ON fact_shipments(is_delayed);
+
+-- ─────────────────────────────────────────────────
+-- MVP 4 — REAL-TIME STREAMING TABLE
+-- One row per Kafka event consumed by Spark Streaming
+-- Enriched with computed fields (cost_per_km, weather_risk)
+-- ─────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS realtime_shipments (
+    id                  SERIAL PRIMARY KEY,
+    event_id            VARCHAR(36) UNIQUE NOT NULL,
+    event_type          VARCHAR(50),          -- NEW_SHIPMENT, STATUS_UPDATE, LOCATION_UPDATE, DELIVERY_COMPLETE
+    event_timestamp     TIMESTAMP,
+    shipment_id         VARCHAR(50),
+    status              VARCHAR(20),
+    origin_city         VARCHAR(100),
+    destination_city    VARCHAR(100),
+    vehicle_type        VARCHAR(20),
+    weight_kg           NUMERIC(10,2),
+    distance_km         NUMERIC(10,2),
+    revenue             NUMERIC(10,2),
+    is_delayed          BOOLEAN,
+    delay_hours         NUMERIC(5,1),
+    driver_rating       NUMERIC(3,1),
+    temperature_c       NUMERIC(5,1),
+    humidity_pct        NUMERIC(5,1),
+    -- Derived by Spark Streaming
+    cost_per_km         NUMERIC(10,4),        -- revenue / distance_km
+    weather_risk        VARCHAR(10),          -- LOW / MEDIUM / HIGH
+    ingested_at         TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_rt_shipments_timestamp   ON realtime_shipments(event_timestamp);
+CREATE INDEX IF NOT EXISTS idx_rt_shipments_status      ON realtime_shipments(status);
+CREATE INDEX IF NOT EXISTS idx_rt_shipments_shipment_id ON realtime_shipments(shipment_id);

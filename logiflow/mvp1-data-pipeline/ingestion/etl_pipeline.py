@@ -32,7 +32,9 @@ POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
 POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
 POSTGRES_DB = os.getenv("POSTGRES_DB", "logiflow")
 POSTGRES_USER = os.getenv("POSTGRES_USER", "logiflow_user")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "logiflow_pass")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+if not POSTGRES_PASSWORD:
+    raise ValueError("POSTGRES_PASSWORD environment variable must be set")
 
 # Files to process from MinIO
 FILES_TO_EXTRACT = {
