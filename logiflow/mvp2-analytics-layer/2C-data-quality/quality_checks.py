@@ -4,14 +4,18 @@ from datetime import datetime
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
-load_dotenv("/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/.env")
+# Works both locally and inside Airflow container
+load_dotenv()  # reads from environment variables already set by Docker
 
-os.makedirs("logs", exist_ok=True)
+os.makedirs("/opt/airflow/logs/quality", exist_ok=True) if os.path.exists("/opt/airflow") else os.makedirs("logs", exist_ok=True)
+
+LOG_DIR = "/opt/airflow/logs/quality" if os.path.exists("/opt/airflow") else "logs"
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler(f"logs/quality_{datetime.now().strftime('%Y%m')}.log"),
+        logging.FileHandler(f"{LOG_DIR}/quality_{datetime.now().strftime('%Y%m')}.log"),
         logging.StreamHandler()
     ]
 )
@@ -21,7 +25,7 @@ log = logging.getLogger(__name__)
 def get_engine():
     return create_engine(
         f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
-        f"@{os.getenv('POSTGRES_HOST','localhost')}:{os.getenv('POSTGRES_PORT','5432')}"
+        f"@{os.getenv('POSTGRES_HOST', 'localhost')}:{os.getenv('POSTGRES_PORT', '5432')}"
         f"/{os.getenv('POSTGRES_DB')}"
     )
 

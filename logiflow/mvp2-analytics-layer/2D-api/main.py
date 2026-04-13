@@ -1,59 +1,17 @@
-# ── Add this import at top of main.py ──
-import sys
-sys.path.append(os.path.abspath(
-    "../../mvp3-advanced/3A-ml-prediction"
-))
-from predict import predict_single
-from pydantic import BaseModel
-
-# ── Add this endpoint ──
-class ShipmentInput(BaseModel):
-    weight_kg:            float
-    distance_km:          int
-    planned_duration_hrs: float
-    cost_usd:             float
-    weather_condition:    str
-    temperature_celsius:  float
-    wind_speed_kmh:       float
-    experience_years:     int
-    driver_rating:        float
-    license_type:         str
-    vehicle_type:         str
-    vehicle_age_years:    int
-    mileage_km:           int
-    region:               str
-    route_type:           str
-    route_distance:       int
-    month:                int
-    quarter:              int
-    is_weekend:           int
-    weekday:              str
-    segment:              str
-    industry:             str
-
-@app.post("/predict/delay")
-def predict_delay(shipment: ShipmentInput):
-    """
-    Predict if a shipment will be delayed.
-    Returns probability and risk level.
-    """
-    try:
-        result = predict_single(shipment.dict())
-        return result
-    except FileNotFoundError:
-        raise HTTPException(
-            status_code=503,
-            detail="Model not trained yet. Run train.py first."
-        )
-
-
 from fastapi import FastAPI, Query, HTTPException
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
+from pydantic import BaseModel
 import pandas as pd
+import sys
 import os
 
-load_dotenv(os.path.join(os.path.dirname(__file__), "../../.env"))
+# ─── Fix: absolute paths ──────────────────────────────────────
+load_dotenv("/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/.env")
+
+sys.path.append(
+    "/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/mvp3-advanced/3A-ml-prediction"
+)
 
 app = FastAPI(
     title="LogiFlow API",
@@ -102,7 +60,6 @@ def get_shipments(
     offset: int = Query(0,   ge=0),
     status: str = Query(None, description="on_time | delayed | failed")
 ):
-    """Return paginated shipments with all dimension data joined"""
     where = "WHERE f.status = :status" if status else ""
     sql = f"""
         SELECT
@@ -131,7 +88,6 @@ def get_shipments(
 
 @app.get("/shipments/{shipment_id}")
 def get_shipment(shipment_id: int):
-    """Return one shipment by ID"""
     sql = """
         SELECT f.*, d.full_date, c.company_name, c.segment,
                dr.full_name, v.vehicle_type,
@@ -156,7 +112,6 @@ def get_shipment(shipment_id: int):
 
 @app.get("/kpis/summary")
 def get_kpi_summary():
-    """Top-level KPIs for the dashboard"""
     sql = """
         SELECT
             COUNT(*)                                        AS total_shipments,
@@ -176,7 +131,6 @@ def get_kpi_summary():
 
 @app.get("/kpis/by-month")
 def get_kpis_by_month():
-    """Monthly KPI breakdown"""
     sql = """
         SELECT
             d.year, d.month, d.month_name,
@@ -195,7 +149,6 @@ def get_kpis_by_month():
 
 @app.get("/kpis/by-region")
 def get_kpis_by_region():
-    """KPIs grouped by region"""
     sql = """
         SELECT
             r.region,
@@ -218,7 +171,6 @@ def get_kpis_by_region():
 
 @app.get("/drivers")
 def get_drivers():
-    """All drivers with their performance stats"""
     sql = """
         SELECT
             dr.driver_id, dr.full_name, dr.license_type,
@@ -238,7 +190,6 @@ def get_drivers():
 
 @app.get("/drivers/{driver_id}")
 def get_driver(driver_id: int):
-    """One driver profile + stats"""
     sql = """
         SELECT dr.*, COUNT(f.shipment_id) AS total_shipments,
                ROUND(AVG(CASE WHEN f.status='on_time' THEN 1.0 ELSE 0 END)*100,2) AS on_time_pct
@@ -259,7 +210,6 @@ def get_driver(driver_id: int):
 
 @app.get("/routes")
 def get_routes():
-    """All routes with performance stats"""
     sql = """
         SELECT
             r.route_id, r.origin_city, r.origin_country,
@@ -285,7 +235,6 @@ def get_routes():
 
 @app.get("/weather/impact")
 def get_weather_impact():
-    """Delay rate and avg delay grouped by weather condition"""
     sql = """
         SELECT
             weather_condition,
@@ -299,3 +248,46 @@ def get_weather_impact():
         ORDER BY delay_rate_pct DESC
     """
     return query_to_list(sql)
+
+
+# ══════════════════════════════════════════════════════════════
+# ML PREDICTION
+# ══════════════════════════════════════════════════════════════
+
+class ShipmentInput(BaseModel):
+    weight_kg:            float
+    distance_km:          int
+    planned_duration_hrs: float
+    cost_usd:             float
+    weather_condition:    str
+    temperature_celsius:  float
+    wind_speed_kmh:       float
+    experience_years:     int
+    driver_rating:        float
+    license_type:         str
+    vehicle_type:         str
+    vehicle_age_years:    int
+    mileage_km:           int
+    region:               str
+    route_type:           str
+    route_distance:       int
+    month:                int
+    quarter:              int
+    is_weekend:           int
+    weekday:              str
+    segment:              str
+    industry:             str
+
+
+@app.post("/predict/delay")
+def predict_delay(shipment: ShipmentInput):
+    """Predict if a shipment will be delayed. Returns probability and risk level."""
+    try:
+        from predict import predict_single
+        result = predict_single(shipment.dict())
+        return result
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=503,
+            detail="Model not trained yet. Run train.py first."
+        )
