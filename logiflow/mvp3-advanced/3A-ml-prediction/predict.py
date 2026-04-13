@@ -4,13 +4,15 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 
-MODEL_PATH = "models/delay_predictor.pkl"
+from pathlib import Path
+
+MODEL_PATH = Path("/opt/airflow/project/mvp3-advanced/3A-ml-prediction/models/delay_predictor.pkl")
 
 
 def load_model():
-    if not os.path.exists(MODEL_PATH):
+    if not MODEL_PATH.exists():
         raise FileNotFoundError("Model not found. Run train.py first.")
-    return joblib.load(MODEL_PATH)
+    return joblib.load(MODEL_PATH.as_posix())
 
 
 def predict_single(shipment: dict) -> dict:

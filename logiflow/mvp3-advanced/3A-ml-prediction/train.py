@@ -21,10 +21,14 @@ from sklearn.metrics import (
 from xgboost import XGBClassifier
 
 load_dotenv("/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/mvp3-advanced/3A-ml-prediction/.env")
+
+
 from pathlib import Path
 
-MODELS_DIR  = Path("/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/mvp3-advanced/3A-ml-prediction/models")
-REPORTS_DIR = Path("/mnt/c/Users/HP PRO/Documents/global logistic project/logiflow/mvp3-advanced/3A-ml-prediction/reports")
+BASE_DIR = Path("/opt/airflow/project/mvp3-advanced/3A-ml-prediction")
+
+MODELS_DIR  = BASE_DIR / "models"
+REPORTS_DIR = BASE_DIR / "reports"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)
@@ -247,7 +251,7 @@ def plot_results(results, X_train, feature_names, y_test):
     plt.tight_layout()
     
     path = REPORTS_DIR / f"evaluation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
-    plt.savefig(str(path), dpi=150, bbox_inches="tight")
+    plt.savefig(path.as_posix(), dpi=150, bbox_inches="tight")
 
     
 
@@ -280,7 +284,7 @@ def save_best_model(results, best_name, encoders, scaler, feature_names):
     }
 
     path = MODELS_DIR / "delay_predictor.pkl"
-    joblib.dump(bundle, str(path))
+    joblib.dump(bundle, path.as_posix())
 
     log.info(f"💾 Saved best model ({best_name}) → {path}")
     log.info(f"   Accuracy : {results[best_name]['accuracy']:.3f}")
