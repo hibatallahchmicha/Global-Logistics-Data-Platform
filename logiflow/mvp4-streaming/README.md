@@ -34,20 +34,4 @@ This is the final proof of end-to-end success because it shows the processed shi
 
 ![Realtime Shipments Table](assets/screenshots/03_realtime_shipments_table.png)
 
-## Screenshots intentionally excluded
 
-The following were left out because they are redundant or less informative:
-- duplicate producer log screenshots
-- generic Kafka dashboard overview
-- Kafka broker details page
-
-Those views are useful during debugging, but they are not necessary in the final README.
-
-## Success Criteria
-
-MVP 4 is considered complete when:
-- Kafka is receiving shipment events
-- Spark is actively processing the stream
-- PostgreSQL is storing live enriched rows
-
-Current evidence already confirms this flow is operational.
