@@ -1,0 +1,18 @@
+FROM apache/spark:3.5.1-scala2.12-java17-python3-ubuntu
+
+USER root
+WORKDIR /app
+
+COPY requirements.spark.txt .
+RUN pip install --no-cache-dir -r requirements.spark.txt
+
+COPY spark_streaming.py .
+
+CMD [ \
+  "/opt/spark/bin/spark-submit", \
+  "--master", "spark://spark-master:7077", \
+  "--packages", \
+    "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,org.postgresql:postgresql:42.7.1", \
+  "--conf", "spark.sql.shuffle.partitions=4", \
+  "/app/spark_streaming.py" \
+]
