@@ -25,3 +25,6 @@ ml/models/*.pkl
 # OS/editor cruft
 .DS_Store
 Thumbs.db
+CHECKPOINTS.md
+
+METRICS_GLOSSARY.md
