@@ -233,7 +233,7 @@ def _generate_one_shipment(pickup_date: datetime, use_real: bool) -> dict:
     planned_hrs = round(distance_km / 75, 2)
     actual_hrs  = round(planned_hrs + delay_minutes / 60, 2)
 
-    scheduled_pickup   = pickup_date.replace(hour=int(np.random.randint(6, 18)), minute=0, second=0, microsecond=0)
+    scheduled_pickup   = pickup_date.replace(hour=int(np.random.randint(6, 18)), minute=int(np.random.randint(0, 60)), second=0, microsecond=0)
     actual_pickup      = scheduled_pickup + timedelta(minutes=int(np.random.randint(0, 20)))
     scheduled_delivery = scheduled_pickup + timedelta(hours=planned_hrs)
     actual_delivery    = actual_pickup + timedelta(hours=actual_hrs)
