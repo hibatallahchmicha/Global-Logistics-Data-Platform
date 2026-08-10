@@ -12,16 +12,11 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Load the root .env file no matter which directory this is run from.
-# In Docker, the container already has these as real env vars (injected via
-# docker-compose's env_file), so this call finds nothing to load and does
-# nothing -- same code works in both places.
 _ROOT_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(_ROOT_DIR / ".env")
 
 
 def _require(name: str) -> str:
-    """Read a required env var, or fail immediately with a clear error."""
     value = os.getenv(name)
     if not value:
         raise ValueError(f"Missing required environment variable: {name}")
@@ -50,6 +45,9 @@ class Settings:
     # --- Optional: live weather enrichment ---
     openweather_api_key: str | None
 
+    # --- Optional: live traffic enrichment ---
+    tomtom_api_key: str | None
+
     @property
     def database_url(self) -> str:
         return (
@@ -75,6 +73,7 @@ def _load_settings() -> Settings:
         kafka_topic=os.getenv("KAFKA_TOPIC", "shipment_events"),
 
         openweather_api_key=os.getenv("OPENWEATHER_API_KEY") or None,
+        tomtom_api_key=os.getenv("TOMTOM_API_KEY") or None,
     )
 
 
@@ -82,9 +81,9 @@ settings = _load_settings()
 
 
 if __name__ == "__main__":
-    # Manual sanity check: run this file directly to confirm everything loaded.
     masked = settings.database_url.replace(settings.postgres_password, "****")
     print("Postgres  ->", masked)
     print("MinIO     ->", settings.minio_endpoint, "| bucket:", settings.bucket_name)
     print("Kafka     ->", settings.kafka_bootstrap_servers, "| topic:", settings.kafka_topic)
     print("Weather   ->", "configured" if settings.openweather_api_key else "not set (will simulate)")
+    print("Traffic   ->", "configured" if settings.tomtom_api_key else "not set (will simulate)")
