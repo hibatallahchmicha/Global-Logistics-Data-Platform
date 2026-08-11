@@ -1,10 +1,9 @@
-# MVP 4 — Real-Time Streaming Services
+# MVP 4 -- Real-Time Streaming Services
 # Run with: docker compose -f docker-compose.yml -f docker-compose.streaming.yml up -d
 # Requires the core stack (docker-compose.yml) to already be running.
 
 services:
 
-  # ── Kafka (official Apache Kafka, single-node KRaft) ───────────────────
   kafka:
     image: apache/kafka:3.7.0
     container_name: logiflow_kafka
@@ -37,10 +36,9 @@ services:
       retries: 8
       start_period: 30s
 
-  # ── Kafka UI (optional helper UI; not required for MVP completion) ──────
   kafka-ui:
     profiles: ["ui"]
-    image: provectuslabs/kafka-ui:latest
+    image: provectuslabs/kafka-ui:v0.7.2
     container_name: logiflow_kafka_ui
     environment:
       KAFKA_CLUSTERS_0_NAME: logiflow
@@ -54,7 +52,6 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # ── Spark Master ─────────────────────────────────────────────────────────
   spark-master:
     image: apache/spark:3.5.1-scala2.12-java17-python3-ubuntu
     container_name: logiflow_spark_master
@@ -68,7 +65,6 @@ services:
       - logiflow_net
     restart: unless-stopped
 
-  # ── Spark Worker ─────────────────────────────────────────────────────────
   spark-worker:
     image: apache/spark:3.5.1-scala2.12-java17-python3-ubuntu
     container_name: logiflow_spark_worker
@@ -81,12 +77,13 @@ services:
       - spark-master
     restart: unless-stopped
 
-  # ── Kafka Producer ────────────────────────────────────────────────────────
   shipment-producer:
     build:
-      context: ./mvp4-streaming
-      dockerfile: Dockerfile.producer
+      context: .
+      dockerfile: streaming/Dockerfile.producer
     container_name: logiflow_shipment_producer
+    env_file:
+      - .env
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       KAFKA_TOPIC: shipment_events
@@ -98,10 +95,9 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # ── Spark Streaming Job ───────────────────────────────────────────────────
   spark-streaming:
     build:
-      context: ./mvp4-streaming
+      context: ./streaming
       dockerfile: Dockerfile.spark_job
     container_name: logiflow_spark_streaming
     environment:
@@ -129,4 +125,4 @@ networks:
     driver: bridge
 
 volumes:
-  kafka_data:
+  kafka_data:docker compose logs airflow --tail 100

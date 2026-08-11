@@ -24,7 +24,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score, roc_curve
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from xgboost import XGBClassifier
 
 from common.config import settings
@@ -62,7 +62,9 @@ def load_data() -> pd.DataFrame:
         JOIN dim_date     d  ON f.date_id     = d.date_id
         JOIN dim_customer c  ON f.customer_id = c.customer_id
     """
-    df = pd.read_sql(query, engine)
+    with engine.connect() as conn:
+        result = conn.execute(text(query))
+        df = pd.DataFrame(result.fetchall(), columns=list(result.keys()))
     log.info("Loaded %d rows for training", len(df))
     return df
 

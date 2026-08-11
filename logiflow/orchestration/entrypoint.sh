@@ -1,8 +1,13 @@
 #!/bin/bash
 set -e
 
-echo "Installing pipeline dependencies..."
-pip install --quiet -r /opt/airflow/project/orchestration/requirements.txt
+echo "================================================"
+echo "LogiFlow Airflow Startup"
+echo "================================================"
+
+echo "Installing pipeline dependencies (--no-deps: exact versions only, no resolver fight with Airflow's own dependency tree)..."
+pip install --quiet --no-deps -r /opt/airflow/project/orchestration/requirements.txt
+echo "Packages installed"
 
 echo "Waiting for PostgreSQL..."
 until python -c "
