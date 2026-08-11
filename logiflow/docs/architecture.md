@@ -1,275 +1,172 @@
 # LogiFlow — System Architecture
 
-> This document describes the full technical architecture of the LogiFlow platform,
-> covering all four MVPs and the data journey from ingestion to real-time streaming.
+> Technical architecture as it actually exists after the structural rebuild — organized
+> by role (shared library / pipeline / service / orchestration / streaming), not by the
+> order things were originally built in.
 
 ---
 
-## Table of Contents
+## 1. Design Principle: One Source of Truth Per Concern
 
-1. [High-Level Overview](#1-high-level-overview)
-2. [Component Inventory](#2-component-inventory)
-3. [Data Flow Diagrams](#3-data-flow-diagrams)
-4. [MVP Architecture Layers](#4-mvp-architecture-layers)
-5. [Infrastructure & Networking](#5-infrastructure--networking)
-6. [Security Considerations](#6-security-considerations)
+The original version of this project had configuration duplicated across ~6 files, three
+independent MinIO client constructions, and two incompatible synthetic data generators.
+The rebuild's organizing rule: every concern lives in exactly one place, and everything
+else imports it.
 
----
-
-## 1. High-Level Overview
-
-LogiFlow is a multi-layer logistics data platform composed of four progressive MVPs:
-
-| Layer | MVP | Purpose |
-|-------|-----|---------|
-| Foundation | MVP 1 | Batch data ingestion, ETL, star schema warehouse |
-| Analytics | MVP 2 | Dashboard, REST API, scheduling, data quality |
-| Intelligence | MVP 3 | ML delay prediction, live weather data, Airflow orchestration |
-| Streaming | MVP 4 | Real-time Kafka events, Spark Structured Streaming |
-
-**End-to-end data journey:**
-
-```
- Raw CSV / Live API / Kafka Events
-         │
-         ▼
- ┌───────────────┐
- │  MinIO (S3)   │  ← Staging layer — raw files before transformation
- └───────┬───────┘
-         │ ETL
-         ▼
- ┌────────────────────┐
- │   PostgreSQL       │  ← Analytical core — star schema + realtime tables
- │   (Warehouse)      │
- └────────┬───────────┘
-          │
-    ┌─────┴──────────────────────┐
-    │                            │
-    ▼                            ▼
- ┌──────────┐            ┌─────────────┐
- │Streamlit │            │  FastAPI    │
- │Dashboard │            │  REST API   │
- └──────────┘            └──────┬──────┘
-                                │
-                         ┌──────▼──────┐
-                         │ XGBoost ML  │
-                         │  Predictor  │
-                         └─────────────┘
-```
+| Concern | Single source of truth |
+|---|---|
+| Environment/config | `common/config.py` — fails fast if a required var is missing |
+| Object storage access | `common/storage.py` — the only file that touches the MinIO SDK directly |
+| Warehouse structure | `infra/schema.sql` — applied once via `docker-entrypoint-initdb.d` |
+| Feature engineering | `ml/train.py`'s logic, mirrored exactly in `ml/predict.py` |
+| Business logic | `pipelines/` and `ml/` modules — the Airflow DAG only calls them, never reimplements them |
 
 ---
 
 ## 2. Component Inventory
 
-### Core Services (docker-compose.yml)
+### Core Services (`docker-compose.yml`)
 
-| Service | Image | Port(s) | Role |
-|---------|-------|---------|------|
-| `logiflow_postgres` | `postgres:15` | `5432` | Primary data warehouse + Airflow metadata DB |
-| `logiflow_minio` | `minio/minio:latest` | `9000` (API), `9001` (Console) | S3-compatible object store for raw CSV staging |
-| `logiflow_airflow` | `apache/airflow:2.8.0-python3.11` | `8080` | DAG orchestration and pipeline scheduling |
-| `logiflow_api` | Custom build | `8000` | FastAPI REST API with ML prediction endpoint |
+| Service | Image / Build | Port(s) | Role |
+|---|---|---|---|
+| `logiflow_postgres` | `postgres:15` | 5432 | Warehouse + Airflow metadata DB |
+| `logiflow_minio` | `minio/minio:RELEASE.2025-09-07T16-13-09Z` | 9000/9001 | Object storage staging |
+| `logiflow_airflow` | `apache/airflow:2.8.0-python3.11` | 8080 | Daily pipeline orchestration |
+| `logiflow_api` | build: repo root, `services/api/Dockerfile` | 8000 | FastAPI REST API + ML serving |
+| `logiflow_dashboard` | build: repo root, `services/dashboard/Dockerfile` | 8501 | Streamlit analytics dashboard |
 
-### Streaming Services (docker-compose.streaming.yml)
+The API and dashboard Dockerfiles build from the **repo root**, not their own
+subdirectory — this is deliberate. The original version built the API from just its own
+folder, which meant the code that imported `ml.predict` had no way to correctly locate it
+inside the container and crashed on startup. Building from the root lets both Dockerfiles
+copy `common/` (and `ml/`, for the API) in as real siblings, mirroring the local layout
+exactly — no path math required.
 
-| Service | Image | Port(s) | Role |
-|---------|-------|---------|------|
-| `logiflow_kafka` | `apache/kafka:3.7.0` | `9092` (internal), `9094` (external) | Message broker — KRaft mode (no Zookeeper) |
-| `logiflow_spark_master` | `apache/spark:3.5.1-scala2.12-java17-python3-ubuntu` | `7077` (cluster), `8082` (UI) | Spark cluster master node |
-| `logiflow_spark_worker` | same | `8083` (UI) | Spark worker node |
-| `logiflow_shipment_producer` | Custom build | — | Kafka producer: 1 event/second |
-| `logiflow_spark_streaming` | Custom build | — | Spark Structured Streaming job |
-| `logiflow_kafka_ui` | `provectuslabs/kafka-ui` | `8090` | Optional Kafka topic browser (profile: ui) |
+### Streaming Services (`docker-compose.streaming.yml`)
 
----
-
-## 3. Data Flow Diagrams
-
-### 3A — Batch Pipeline (MVPs 1–3)
-
-```
-┌────────────────────────────────────────────────────────────────────┐
-│                       BATCH PIPELINE                               │
-│                                                                    │
-│  1. generate_data.py                                               │
-│     └─ Generates synthetic shipments (10,000+ rows)               │
-│        with real weather enrichment (OpenWeatherMap API)           │
-│                 │                                                  │
-│                 ▼                                                  │
-│  2. upload_to_minio.py                                             │
-│     └─ Uploads CSV files to MinIO bucket: logiflow-raw            │
-│                 │                                                  │
-│                 ▼                                                  │
-│  3. etl_pipeline.py                                                │
-│     ├─ Extract: reads CSV from MinIO (boto3)                       │
-│     ├─ Transform: clean, type-cast, compute derived fields         │
-│     │   (delay_minutes, is_delayed, fuel efficiency, etc.)         │
-│     └─ Load: INSERT into star schema via psycopg2                  │
-│              (dim_date, dim_customer, dim_driver,                  │
-│               dim_vehicle, dim_route → fact_shipments)             │
-│                 │                                                  │
-│                 ▼                                                  │
-│  4. quality_checks.py                                              │
-│     └─ 8 validation checks:                                        │
-│        row_counts, null_fk, invalid_status, negative_values,       │
-│        delay_consistency, rating_range, orphan_records,            │
-│        duplicate_shipments                                         │
-│                 │                                                  │
-│                 ▼                                                  │
-│  5. train.py                                                       │
-│     └─ Retrains 4 classifiers on latest warehouse data             │
-│        Best model saved as delay_predictor.pkl                     │
-│                                                                    │
-└────────────────────────────────────────────────────────────────────┘
-```
-
-### 3B — Real-Time Streaming Pipeline (MVP 4)
-
-```
-┌────────────────────────────────────────────────────────────────────┐
-│                    STREAMING PIPELINE                              │
-│                                                                    │
-│  kafka_producer.py                                                 │
-│  └─ Generates synthetic shipment events (JSON)                     │
-│     Publishes 1 event/second → Kafka topic: shipment_events        │
-│                 │                                                  │
-│                 ▼                                                  │
-│  Apache Kafka 3.7.0 (KRaft mode)                                   │
-│  └─ Brokers messages with guaranteed delivery                      │
-│     Internal: kafka:9092 | External: localhost:9094                │
-│                 │                                                  │
-│                 ▼                                                  │
-│  spark_streaming.py (Spark Structured Streaming)                   │
-│  ├─ Reads from Kafka using readStream                              │
-│  ├─ Parses JSON payload                                            │
-│  ├─ Computes derived fields:                                       │
-│  │   cost_per_km = revenue / distance_km                           │
-│  │   weather_risk = LOW / MEDIUM / HIGH (based on temperature)     │
-│  └─ Writes to PostgreSQL: realtime_shipments                       │
-│     Trigger: 10-second micro-batches                               │
-│                 │                                                  │
-│                 ▼                                                  │
-│  PostgreSQL: realtime_shipments table                              │
-│  └─ Stores enriched real-time events for analytics                 │
-│                                                                    │
-└────────────────────────────────────────────────────────────────────┘
-```
-
-### 3C — Airflow Orchestration (MVP 3)
-
-```
-  logiflow_daily_pipeline DAG (schedule: daily @ 02:00 UTC)
-
-  generate_data ──► upload_to_minio ──► run_etl ──► quality_check ──► retrain_model ──► pipeline_summary
-       │                  │               │              │                  │                  │
-  Synthetic data     MinIO staging     Star schema   8 checks          XGBoost           Slack/log
-  + weather API      logiflow-raw      insert        (pass/fail)       retrain           summary
-```
+| Service | Image / Build | Role |
+|---|---|---|
+| `logiflow_kafka` | `apache/kafka:3.7.0` | KRaft mode, no Zookeeper |
+| `logiflow_spark_master` / `logiflow_spark_worker` | `apache/spark:3.5.1-scala2.12-java17-python3-ubuntu` | Spark cluster |
+| `logiflow_shipment_producer` | build: repo root, `streaming/Dockerfile.producer` | Publishes synthetic events |
+| `logiflow_spark_streaming` | build: `streaming/`, `Dockerfile.spark_job` | Consumes, enriches, upserts to Postgres |
+| `logiflow_kafka_ui` (optional, `profile: ui`) | `provectuslabs/kafka-ui:v0.7.2` | Topic browser |
 
 ---
 
-## 4. MVP Architecture Layers
+## 3. Data Flow
 
-### MVP 1 — Data Foundation
-
-**Architecture pattern:** Lambda batch ingestion
-
-- Data is generated with domain-realistic logic (shipment weights, routes, costs, weather)
-- Uploaded as CSV files to MinIO (simulating a data lake landing zone)
-- ETL pipeline extracts from MinIO, transforms with pandas, loads into PostgreSQL
-- Star schema design: `fact_shipments` connected to 5 dimension tables
-
-**Key design decisions:**
-- Star schema over 3NF for analytics query performance
-- MinIO as intermediate staging layer (not direct DB insert) for replayability
-- Foreign key constraints enforced at DB level for data integrity
-
----
-
-### MVP 2 — Analytics Layer
-
-**Architecture pattern:** Layered analytics on top of warehouse
-
-- **Dashboard (Streamlit):** connects directly to PostgreSQL via `db_connector.py`
-- **API (FastAPI):** exposes warehouse data through RESTful endpoints, Swagger UI at `/docs`
-- **Scheduler (APScheduler):** runs ETL + quality checks on cron schedule
-- **Quality checks:** run post-ETL to validate referential integrity and business rules
-
----
-
-### MVP 3 — Intelligence Layer
-
-**Architecture pattern:** ML training loop integrated into pipeline
-
-- Warehouse is used as the ML training set (10,000+ labeled shipments)
-- Feature engineering: vehicle_age, load_ratio, cost_per_km, mileage_per_year
-- 4 models compared; best saved via joblib; loaded by FastAPI for live inference
-- Airflow DAG replaces APScheduler: all 6 tasks orchestrated as a DAG with dependencies
-
----
-
-### MVP 4 — Streaming Layer
-
-**Architecture pattern:** Kappa architecture — streaming-first with PostgreSQL sink
-
-- Kafka acts as the event bus (decoupled producer/consumer)
-- Spark Structured Streaming provides exactly-once processing guarantees
-- Events enriched with derived metrics before writing to PostgreSQL
-- Streaming table (`realtime_shipments`) can be queried alongside batch data for unified analytics
-
----
-
-## 5. Infrastructure & Networking
-
-### Docker Network
-
-All services communicate on a shared bridge network: `logiflow_net`
+### 3A — Batch Pipeline
 
 ```
-logiflow_net (bridge)
-├── logiflow_postgres      :5432
-├── logiflow_minio         :9000/:9001
-├── logiflow_airflow       :8080
-├── logiflow_api           :8000
-├── logiflow_kafka         :9092 (internal) / :9094 (external)
-├── logiflow_spark_master  :7077/:8082
-├── logiflow_spark_worker  :8083
-├── logiflow_shipment_producer
-└── logiflow_spark_streaming
+pipelines/generate_shipments.py
+  ├─ fixed roster of 8 customers / 8 drivers / 8 vehicles / 10 routes
+  │  (reused every run, not regenerated -- dimension tables need stable identity)
+  ├─ real weather (OpenWeatherMap) + real traffic (TomTom), cached per city,
+  │  only for days_back <= 7 -- a live snapshot API cannot answer for the past,
+  │  so historical seeding always uses simulated (but realistically distributed) data
+  ├─ tags every shipment with source_shipment_id (UUID, assigned at creation)
+  └─ uploads one flat CSV to MinIO: raw/shipments_<timestamp>.csv
+
+pipelines/etl.py
+  ├─ reads every raw/shipments_*.csv currently in MinIO (accumulates, no truncation)
+  ├─ upserts each dimension on its natural key (company_name, full_name, plate_number,
+  │  origin+destination pair) -- ON CONFLICT DO NOTHING, then looks up the surrogate ID
+  └─ upserts fact_shipments ON CONFLICT (source_shipment_id) DO NOTHING
+     -- re-running this on the same files is a no-op, verified by running it twice
+        back-to-back and confirming the row count didn't change
+
+pipelines/quality_checks.py
+  └─ 8 checks, split into CRITICAL_CHECKS (row_counts, null_foreign_keys,
+     orphan_records -- stop the pipeline) and non-critical (log and continue)
+
+ml/train.py
+  └─ loads the warehouse via SQLAlchemy `conn.execute(text(...))` (not pd.read_sql --
+     see the note below), trains 4 models, saves the best by ROC-AUC
 ```
 
-### Volume Mounts
+**Why `ml/train.py` doesn't use `pd.read_sql(query, engine)`:** inside the Airflow
+container, `pandas` and the SQLAlchemy version Airflow itself depends on internally don't
+agree on how `pd.read_sql` should detect a valid connection — it raised
+`AttributeError: 'Connection' object has no attribute 'cursor'` in practice. The fix was
+to stop relying on pandas' internal SQLAlchemy-connectable detection entirely and build
+the DataFrame directly from `conn.execute(text(query)).fetchall()` — the same pattern
+`pipelines/quality_checks.py` already used successfully in the same environment.
 
-| Volume | Service | Purpose |
-|--------|---------|---------|
-| `postgres_data` | PostgreSQL | Persistent warehouse storage |
-| `minio_data` | MinIO | Persistent object store data |
-| `./logs/airflow` | Airflow | DAG and task execution logs |
-| `./3C-airflow-orchestration/dags` | Airflow | DAG definition files |
-| `./mvp4-streaming` | Spark/Producer | Source code hot-reload |
-
-### Environment Configuration
-
-All sensitive configuration is stored in `.env` (see `.env.example`):
+### 3B — Streaming Pipeline (independent path)
 
 ```
-POSTGRES_USER=logiflow_user
-POSTGRES_PASSWORD=<your-password>
-POSTGRES_DB=logiflow
-MINIO_ROOT_USER=<your-user>
-MINIO_ROOT_PASSWORD=<your-password>
-AIRFLOW_ADMIN_USERNAME=admin
-AIRFLOW_ADMIN_PASSWORD=<your-password>
-OPENWEATHER_API_KEY=<optional>
+streaming/kafka_producer.py
+  └─ synthetic shipment events, acks="all" + retries=3 (at-least-once delivery --
+     duplicates are an expected condition, not a hypothetical one)
+       │
+       ▼
+Kafka (shipment_events topic)
+       │
+       ▼
+streaming/spark_streaming.py
+  ├─ parses JSON, computes cost_per_km and weather_risk
+  └─ foreachPartition upsert: INSERT ... ON CONFLICT (event_id) DO NOTHING
+     -- not a plain JDBC append. A duplicate event_id from producer retries would
+        violate realtime_shipments' UNIQUE constraint and crash a plain-append sink;
+        this doesn't, because it's a real upsert, not a claim of one.
 ```
+
+Uses plain `os.getenv()`, not `common.config` — the one deliberate exception. Spark
+distributes this code across driver and executor processes; `common.config`'s
+assumptions (repo root on `sys.path`, `.env` at a fixed relative path) don't reliably
+hold across that boundary. Config is passed in as explicit environment variables by
+`spark-submit`/Docker instead.
+
+**Honest status:** built and individually correct, but not yet verified end-to-end
+against the current `docker-compose.streaming.yml`, and nothing downstream (API,
+dashboard) currently reads `realtime_shipments`.
+
+### 3C — Orchestration
+
+```
+orchestration/dags/logiflow_pipeline.py
+  generate_shipments >> run_etl >> quality_check >> retrain_model
+```
+
+Every task function is a thin wrapper: `from pipelines.etl import run; run()`. No
+business logic lives in the DAG file — the original version had ~100 lines of CSV-
+splitting logic embedded in one Airflow operator, untestable outside Airflow. If a
+module works when run standalone (`python -m pipelines.etl`), the DAG task does exactly
+that, because it *is* that call.
+
+`retries: 1`, `retry_delay: 5 minutes`, `email_on_failure: False` — retry logic is real
+and was observed firing correctly during development; failure alerting is not
+implemented, a known gap.
 
 ---
 
-## 6. Security Considerations
+## 4. Infrastructure Notes
 
-- All credentials are externalized to `.env` — never committed to version control
-- PostgreSQL listens only within the Docker bridge network (not exposed on host by default)
-- MinIO access keys are rotated via the MinIO Console
-- Airflow webserver authentication is enabled (username/password)
-- Kafka external listener (`9094`) is intended for local development only — should be restricted or removed in production
-- FastAPI does not implement authentication in the current version — suitable for internal/dev use; add OAuth2 before production exposure
+### Dependency isolation inside the Airflow container
+
+Installing pipeline dependencies (`pandas`, `scikit-learn`, `xgboost`, etc.) directly
+into the Airflow image is riskier than it looks: Airflow pins its own internal
+dependencies strictly (notably `SQLAlchemy<2.0`), and a naive `pip install` upgrading
+those breaks Airflow's own database engine setup. `orchestration/entrypoint.sh` installs
+via `pip install --no-deps`, with every package pinned explicitly in
+`orchestration/requirements.txt` (including transitive dependencies that `--no-deps`
+otherwise skips, like `argon2-cffi-bindings` for the `minio` package's crypto module) —
+this avoids fighting Airflow's own dependency resolution entirely, at the cost of having
+to enumerate transitive dependencies by hand.
+
+### Image pinning
+
+The official `minio/minio` Docker Hub repository was archived in April 2026 — MinIO
+stopped publishing pre-compiled images in October 2025. `docker-compose.yml` pins to the
+last real release, `RELEASE.2025-09-07T16-13-09Z`, rather than `:latest`. This is also a
+concrete argument for the `common/storage.py` abstraction: when this image eventually
+needs replacing, exactly one file changes.
+
+### What's not yet done
+
+- No drift detection, no retrain-quality gate (a worse model silently replaces a better
+  one), no alerting on pipeline failure.
+- Model artifacts aren't versioned — each retrain overwrites the only saved `.pkl`.
+- Streaming stack not yet verified end-to-end against this structure.
+- No CI/CD yet (planned as the next piece of work, after the structure stabilizes).

@@ -1,359 +1,156 @@
 # LogiFlow — Setup Guide
 
-> Step-by-step instructions to deploy the full LogiFlow platform locally,
-> covering the core stack (MVPs 1–3) and the real-time streaming layer (MVP 4).
-
----
-
-## Table of Contents
-
-1. [Prerequisites](#1-prerequisites)
-2. [Repository Structure](#2-repository-structure)
-3. [Environment Configuration](#3-environment-configuration)
-4. [Core Stack Setup (MVPs 1–3)](#4-core-stack-setup-mvps-13)
-5. [Verify the Pipeline](#5-verify-the-pipeline)
-6. [Streaming Stack Setup (MVP 4)](#6-streaming-stack-setup-mvp-4)
-7. [Access All Services](#7-access-all-services)
-8. [Running the Analytics Layer](#8-running-the-analytics-layer)
-9. [Troubleshooting](#9-troubleshooting)
+> Step-by-step instructions to run the platform locally, current structure.
 
 ---
 
 ## 1. Prerequisites
 
-Ensure the following are installed and running before you begin:
+| Requirement | Notes |
+|---|---|
+| Docker Desktop | Running, with Docker Compose v2 (`docker compose`, not `docker-compose`) |
+| Python 3.11+ | For running pipeline scripts directly on the host |
+| PowerShell or a POSIX shell | Commands below are shown for PowerShell; adjust quoting for bash |
 
-| Requirement | Minimum Version | Notes |
-|-------------|----------------|-------|
-| Docker Desktop | 24.x | Must be running |
-| Docker Compose | 2.x (plugin) | Use `docker compose` not `docker-compose` |
-| Python | 3.10+ | For running local scripts |
-| Git | Any | To clone the repository |
-
-> **Windows users:** All commands assume WSL2 (Ubuntu). Run them in a WSL terminal,
-> not PowerShell or CMD. The project path in WSL will be under `/mnt/c/Users/...`.
+No WSL2 requirement — this rebuild runs directly on Windows/PowerShell.
 
 ---
 
-## 2. Repository Structure
+## 2. Environment Configuration
 
-```
-Global-Logistics-Data-Platform/
-├── README.md                        ← Project overview
-└── logiflow/
-    ├── docker-compose.yml           ← Core services (postgres, minio, airflow, api)
-    ├── docker-compose.streaming.yml ← MVP4 streaming services (kafka, spark, producer)
-    ├── .env                         ← Your local secrets (not committed)
-    ├── .env.example                 ← Template for .env
-    ├── requirements.txt             ← Python dependencies
-    ├── docs/                        ← This documentation
-    ├── mvp1-data-pipeline/          ← Schema, ETL, data generation
-    ├── mvp2-analytics-layer/        ← Dashboard, API, scheduler, quality checks
-    ├── mvp3-advanced/               ← ML model, real data, Airflow orchestration
-    └── mvp4-streaming/              ← Kafka producer, Spark streaming job
-```
-
----
-
-## 3. Environment Configuration
-
-### 3A. Copy the example file
-
-```bash
+```powershell
 cd logiflow
-cp .env.example .env
+Copy-Item .env.example .env
 ```
 
-### 3B. Edit `.env` with your values
+Fill in `.env`:
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` — required.
+- `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` — required; also used as the S3-style access/secret key.
+- `AIRFLOW_USER`, `AIRFLOW_PASSWORD`, `AIRFLOW_FIRSTNAME`, `AIRFLOW_LASTNAME`, `AIRFLOW_EMAIL`, `AIRFLOW_SECRET_KEY` — required.
+- `OPENWEATHER_API_KEY`, `TOMTOM_API_KEY` — optional. Without them, the generator falls back to simulated weather/traffic automatically, no error.
 
-```env
-# PostgreSQL
-POSTGRES_USER=logiflow_user
-POSTGRES_PASSWORD=your_secure_password
-POSTGRES_DB=logiflow
-POSTGRES_HOST=logiflow_postgres
-POSTGRES_PORT=5432
-
-# MinIO (S3-compatible object store)
-MINIO_ROOT_USER=minioadmin
-MINIO_ROOT_PASSWORD=your_minio_password
-MINIO_ENDPOINT=http://logiflow_minio:9000
-MINIO_BUCKET=logiflow-raw
-
-# Airflow
-AIRFLOW_ADMIN_USERNAME=admin
-AIRFLOW_ADMIN_PASSWORD=your_airflow_password
-AIRFLOW__CORE__FERNET_KEY=your_fernet_key   # generate via: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-
-# Kafka (MVP 4)
-KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-KAFKA_TOPIC=shipment_events
-
-# Optional: OpenWeatherMap for real weather enrichment
-OPENWEATHER_API_KEY=your_api_key_here
-```
+**One thing that trips people up:** `MINIO_ENDPOINT` needs different values depending on
+where a script runs. Inside Docker (Airflow, the API), it must be `minio:9000` (Docker's
+internal service DNS) — the `environment:` blocks in `docker-compose.yml` already set
+this correctly per-service. If you're running a pipeline script directly on your host
+(not in a container), your `.env` needs `MINIO_ENDPOINT=localhost:9000` instead, since
+`minio` as a hostname doesn't resolve outside the Docker network.
 
 ---
 
-## 4. Core Stack Setup (MVPs 1–3)
+## 3. Start the Core Stack
 
-### Step 1: Navigate to the logiflow directory
-
-```bash
-cd "/path/to/Global-Logistics-Data-Platform/logiflow"
+```powershell
+docker compose up -d --build
 ```
 
-### Step 2: Start the core services
+Starts Postgres, MinIO, Airflow, the API, and the dashboard. Postgres applies
+`infra/schema.sql` automatically on first container init (via
+`docker-entrypoint-initdb.d` — this only runs once, on a genuinely fresh volume; it will
+not retroactively apply schema changes to an existing `postgres_data` volume).
 
-```bash
-docker compose up -d
+Airflow takes a couple of minutes to come up — it installs pipeline dependencies on
+every container start (`orchestration/entrypoint.sh`). Check readiness with:
+```powershell
+docker compose logs airflow -f
 ```
-
-This starts:
-- `logiflow_postgres` — PostgreSQL 15 on port 5432
-- `logiflow_minio` — MinIO on ports 9000/9001
-- `logiflow_airflow` — Airflow 2.8.0 on port 8080
-- `logiflow_api` — FastAPI on port 8000
-
-Wait ~60 seconds for all services to initialize.
-
-### Step 3: Apply the database schema
-
-The schema is applied automatically on first startup via Airflow's init container.
-To apply it manually if needed:
-
-```bash
-docker exec -i logiflow_postgres psql -U logiflow_user -d logiflow \
-  < mvp1-data-pipeline/schema.sql
-```
-
-### Step 4: Create the MinIO bucket
-
-Open the MinIO Console at [http://localhost:9001](http://localhost:9001),
-log in with your `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`, and create a bucket named `logiflow-raw`.
-
-Or create it programmatically:
-```bash
-docker exec logiflow_minio mc alias set local http://localhost:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
-docker exec logiflow_minio mc mb local/logiflow-raw
-```
-
-### Step 5: Trigger the Airflow DAG
-
-1. Open [http://localhost:8080](http://localhost:8080)
-2. Log in with your Airflow credentials
-3. Find the DAG: `logiflow_daily_pipeline`
-4. Toggle it ON (the blue switch)
-5. Click the ▶ (Trigger DAG) button
-
-The DAG runs 6 tasks in sequence:
-```
-generate_data → upload_to_minio → run_etl → quality_check → retrain_model → pipeline_summary
-```
-
-All tasks should turn green within 3–5 minutes.
+Watch for `Starting Airflow...`, or check `http://localhost:8080/health` directly —
+`HTTP 200` means the webserver is actually up, which is more reliable than trusting the
+log stream (output buffering can make the log look stalled when the container is fine).
 
 ---
 
-## 5. Verify the Pipeline
+## 4. Bootstrap Data
 
-### Check task status
+Nothing in `docker-compose.yml` generates data automatically on first run. Two ways to do it:
 
-In the Airflow UI, all 6 task circles should be **dark green** (success).
-
-### Verify data was loaded
-
-```bash
-docker exec logiflow_postgres psql -U logiflow_user -d logiflow \
-  -c "SELECT COUNT(*) FROM fact_shipments;"
+**Manually, from the host** (good for a quick correctness check first):
+```powershell
+python -m pipelines.generate_shipments --n 50 --days-back 1
+python -m pipelines.etl
+python -m pipelines.quality_checks
+python -m ml.train
 ```
 
-Expected output: `10000+` rows.
-
-### Check data quality results
-
-The Airflow logs for `quality_check` task show all 8 checks. You can also run:
-
-```bash
-docker exec logiflow_postgres psql -U logiflow_user -d logiflow \
-  -c "SELECT status, COUNT(*) FROM fact_shipments GROUP BY status;"
+**At real scale**, once the small run confirms everything works:
+```powershell
+python -m pipelines.generate_shipments --n 1000000 --days-back 730
+python -m pipelines.etl
+python -m ml.train
 ```
+This is a genuinely heavy run — generation takes a few minutes, and training (especially
+`GradientBoostingClassifier`, which doesn't scale well) can take 40+ minutes on a
+million-row dataset. That's expected, not a hang — check `docker stats` if unsure
+whether a container is actually working or stuck.
 
-### Verify ML model was trained
-
-```bash
-ls mvp3-advanced/3A-ml-prediction/models/
-# Should contain: delay_predictor.pkl
-```
+**Or trigger the Airflow DAG** instead of running scripts manually: open
+`http://localhost:8080`, find `logiflow_daily_pipeline`, click the trigger (▶) button.
+It runs the same four steps in order — `generate_shipments → run_etl → quality_check →
+retrain_model` — via `orchestration/dags/logiflow_pipeline.py`. Airflow's Grid view can
+mix historical runs with new ones if you're reusing an old Postgres volume; check the
+actual `run_id` timestamp, not just square color, before trusting what you're looking at.
 
 ---
 
-## 6. Streaming Stack Setup (MVP 4)
+## 5. Verify
 
-### Step 1: Start all services (core + streaming)
+```powershell
+docker exec -i logiflow_postgres psql -U logiflow_user -d logiflow -c "SELECT COUNT(*) FROM fact_shipments;"
+```
 
-```bash
+Check the API and dashboard:
+- `http://localhost:8000/docs` — try `/kpis/summary` and `/predict/delay`
+- `http://localhost:8501` — dashboard should show real data, including the weather/traffic panels
+
+---
+
+## 6. Streaming Layer (Optional, Separate Path)
+
+```powershell
 docker compose -f docker-compose.yml -f docker-compose.streaming.yml up -d --build
 ```
 
-This adds 5 services on top of the core stack:
-- `logiflow_kafka` — Apache Kafka 3.7.0 in KRaft mode
-- `logiflow_spark_master` — Spark cluster master (UI: port 8082)
-- `logiflow_spark_worker` — Spark worker node (UI: port 8083)
-- `logiflow_shipment_producer` — Kafka producer (1 event/second)
-- `logiflow_spark_streaming` — Spark Structured Streaming job
+Adds Kafka, Spark master/worker, the event producer, and the Spark Structured Streaming
+job. This layer is independent of the batch pipeline — verify it separately:
 
-### Step 2: Wait for Kafka to become healthy
-
-```bash
-docker ps --format 'table {{.Names}}\t{{.Status}}' | grep logiflow
+```powershell
+docker compose logs shipment-producer -f
+docker compose logs spark-streaming -f
+docker exec -i logiflow_postgres psql -U logiflow_user -d logiflow -c "SELECT COUNT(*) FROM realtime_shipments;"
 ```
 
-The `logiflow_kafka` container should show `(healthy)` status.
-This takes approximately 30 seconds.
-
-### Step 3: Verify events are flowing
-
-Check producer logs:
-```bash
-docker logs logiflow_shipment_producer --tail 20
-```
-You should see JSON events being published every second.
-
-Check streaming job logs:
-```bash
-docker logs logiflow_spark_streaming --tail 30
-```
-You should see batch processing output every 10 seconds.
-
-### Step 4: Confirm data in PostgreSQL
-
-```bash
-docker exec logiflow_postgres psql -U logiflow_user -d logiflow \
-  -c "SELECT COUNT(*) FROM realtime_shipments;"
-```
-
-The count increases by ~6 every 10 seconds (micro-batch interval).
-
-### Step 5 (Optional): Launch Kafka UI
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.streaming.yml \
-  --profile ui up -d kafka-ui
-```
-
-Access the Kafka UI at [http://localhost:8090](http://localhost:8090)
-to browse the `shipment_events` topic and monitor message throughput.
+Note: nothing in the API or dashboard currently reads `realtime_shipments` — this is
+intentional scope, not a bug. It's a standalone demonstration of a streaming ingestion
+path, not yet wired into the analytics layer.
 
 ---
 
-## 7. Access All Services
+## 7. Troubleshooting Notes Worth Knowing
 
-| Service | URL | Default Credentials |
-|---------|-----|-------------------|
-| Airflow UI | http://localhost:8080 | From `.env`: AIRFLOW_ADMIN_USERNAME / PASSWORD |
-| MinIO Console | http://localhost:9001 | From `.env`: MINIO_ROOT_USER / PASSWORD |
-| FastAPI Swagger | http://localhost:8000/docs | No auth required |
-| Spark Master UI | http://localhost:8082 | No auth required |
-| Spark Worker UI | http://localhost:8083 | No auth required |
-| Kafka UI | http://localhost:8090 | No auth required (optional profile) |
-| PostgreSQL | localhost:5432 | From `.env`: POSTGRES_USER / PASSWORD |
-
----
-
-## 8. Running the Analytics Layer
-
-### Streamlit Dashboard (local)
-
-```bash
-cd mvp2-analytics-layer/2A-dashboard
-pip install -r requirements.txt
-streamlit run app.py
-# → http://localhost:8501
-```
-
-### FastAPI (already containerized)
-
-The API is available at [http://localhost:8000/docs](http://localhost:8000/docs).
-
-Key endpoints:
-- `GET /shipments` — paginated shipment list (filter by status)
-- `GET /kpi/summary` — overall KPI metrics
-- `GET /kpi/by-month` — revenue and delay trends by month
-- `POST /predict/delay` — ML delay prediction (JSON payload with shipment features)
-
-### Predicting a Delay
-
-```bash
-curl -X POST http://localhost:8000/predict/delay \
-  -H "Content-Type: application/json" \
-  -d '{
-    "distance_km": 850,
-    "weight_kg": 2500,
-    "vehicle_age": 5,
-    "driver_experience": 3,
-    "driver_rating": 3.8,
-    "weather_condition": "Rain",
-    "route_type": "Road"
-  }'
-```
-
-Response:
-```json
-{
-  "prediction": "delayed",
-  "probability": 0.73,
-  "risk_level": "HIGH"
-}
-```
+- **`docker compose restart` vs. recreate:** `restart` reuses the same container,
+  including whatever got installed into it by a previous (possibly broken) run. If
+  you've changed `orchestration/requirements.txt` or `entrypoint.sh` and Airflow is still
+  showing the old failure, use `docker compose up -d --force-recreate airflow` instead —
+  `restart` alone won't discard a contaminated container filesystem.
+- **Airflow + your own Python packages:** installing packages like `pandas`/`scikit-learn`
+  directly into the Airflow image can conflict with Airflow's own pinned dependencies
+  (notably `SQLAlchemy`). `orchestration/entrypoint.sh` uses `pip install --no-deps` with
+  every dependency (including transitive ones) pinned explicitly in
+  `orchestration/requirements.txt`, specifically to avoid this.
+- **Checking if a slow container is actually working or stuck:** `docker stats
+  <container>` — high CPU/memory means it's genuinely computing; near-zero usage for
+  several minutes on a task that should be active means something's actually hung.
 
 ---
 
-## 9. Troubleshooting
+## 8. Service Access Reference
 
-### Kafka container shows unhealthy
-
-The healthcheck runs `/opt/kafka/bin/kafka-topics.sh`. Ensure the container is using
-`apache/kafka:3.7.0` (not a Bitnami image). If still failing, wait 60 seconds and re-check.
-
-### Spark job exits immediately
-
-Check for missing Python packages:
-```bash
-docker logs logiflow_spark_streaming 2>&1 | grep -i error
-```
-
-Ensure `spark_streaming.py` uses `/opt/spark/bin/spark-submit` in the Dockerfile CMD.
-
-### realtime_shipments table not found
-
-The table must be created before Spark tries to write. Apply the schema manually:
-```bash
-docker exec -i logiflow_postgres psql -U logiflow_user -d logiflow \
-  < mvp1-data-pipeline/schema.sql
-```
-
-### Airflow tasks failing with "exit code 1"
-
-Check the task log in the Airflow UI. Common causes:
-- `.env` not mounted or missing variables → verify docker-compose volume mounts
-- MinIO bucket doesn't exist → create `logiflow-raw` bucket manually
-- PostgreSQL not yet ready → wait and re-trigger the DAG
-
-### ETL loads 0 rows (quality check fails)
-
-Ensure MinIO contains CSV files. The `generate_data` task should upload them.
-Check MinIO at http://localhost:9001 → bucket `logiflow-raw`.
-
-### Stopping all services
-
-```bash
-# Stop core stack only
-docker compose down
-
-# Stop everything including streaming
-docker compose -f docker-compose.yml -f docker-compose.streaming.yml down
-
-# Stop and remove all volumes (WARNING: destroys all data)
-docker compose -f docker-compose.yml -f docker-compose.streaming.yml down -v
-```
+| Service | URL | Auth |
+|---|---|---|
+| Airflow UI | http://localhost:8080 | From `.env`: `AIRFLOW_USER` / `AIRFLOW_PASSWORD` |
+| MinIO Console | http://localhost:9001 | From `.env`: `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` |
+| FastAPI Swagger | http://localhost:8000/docs | None |
+| Streamlit Dashboard | http://localhost:8501 | None |
+| PostgreSQL | localhost:5432 | From `.env`: `POSTGRES_USER` / `POSTGRES_PASSWORD` |
+| Spark Master UI | http://localhost:8082 | None |
+| Kafka UI (optional) | http://localhost:8090 | None — start with `--profile ui` |
