@@ -75,6 +75,12 @@ jobs:
 
   unit-tests:
     runs-on: ubuntu-latest
+    env:
+      POSTGRES_USER: ci_user
+      POSTGRES_PASSWORD: ci_password
+      POSTGRES_DB: ci_db
+      MINIO_ROOT_USER: ci_minio_user
+      MINIO_ROOT_PASSWORD: ci_minio_password
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
