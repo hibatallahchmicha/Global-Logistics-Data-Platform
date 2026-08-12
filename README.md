@@ -205,10 +205,13 @@ docker compose -f docker-compose.yml -f docker-compose.streaming.yml up -d --bui
 | Airflow DAG | 4 tasks, all verified green in a real run | `generate_shipments → run_etl → quality_check → retrain_model` |
 | API endpoints | 10 | `services/api/main.py` |
 
-**Known, honest gaps** — not yet done, not hidden: no drift detection or retrain-quality
-gate (a worse retrain currently overwrites a better model with no check), no alerting on
-pipeline failure (`email_on_failure: False`), streaming layer not yet verified end-to-end
-against the new structure, model artifacts are not versioned (only the latest is kept).
+| Streaming pipeline | 2,185 rows in `realtime_shipments`, verified live | Kafka producer -> Kafka -> Spark Structured Streaming -> idempotent Postgres upsert, confirmed end-to-end |
+
+**Known, honest gaps** — not yet done, not hidden: no drift detection (a worse retrain
+overwrites a better model with no check, though `ml/train.py` now at least warns loudly
+when the new ROC-AUC is worse than the previous one), no alerting on pipeline failure
+(`email_on_failure: False`), model artifacts are not versioned beyond one rollback copy,
+nothing downstream (API, dashboard) reads `realtime_shipments` yet.
 
 ---
 
