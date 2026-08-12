@@ -10,9 +10,8 @@ loaded -- no separate db_connector.py, no duplicated connection logic.
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-from sqlalchemy import create_engine
-
 from common.config import settings
+from sqlalchemy import create_engine
 
 st.set_page_config(page_title="LogiFlow Analytics", page_icon="🚚", layout="wide")
 

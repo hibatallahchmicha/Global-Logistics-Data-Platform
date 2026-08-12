@@ -10,9 +10,8 @@ Depends on: common.config (1). Run after pipelines/etl.py (5).
 
 import logging
 
-from sqlalchemy import create_engine, text
-
 from common.config import settings
+from sqlalchemy import create_engine, text
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)

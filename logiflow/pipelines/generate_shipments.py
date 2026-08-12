@@ -26,7 +26,6 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 import requests
-
 from common.config import settings
 from common.storage import storage
 
@@ -128,7 +127,7 @@ def fetch_weather(city: str, use_real: bool) -> dict:
             "temperature_celsius": round(data["main"]["temp"], 1),
             "wind_speed_kmh":      round(data["wind"]["speed"] * 3.6, 1),
         }
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 -- external API, any failure should fall back to simulated data
         status = getattr(getattr(e, "response", None), "status_code", "unknown")
         log.warning("Weather API error for %s: HTTP %s -- using simulated", city, status)
         result = _simulate_weather()
@@ -172,7 +171,7 @@ def fetch_traffic(city: str, use_real: bool) -> dict:
             "traffic_congestion_ratio": ratio,
             "traffic_condition": _classify_congestion(ratio),
         }
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 -- external API, any failure should fall back to simulated data
         status = getattr(getattr(e, "response", None), "status_code", "unknown")
         log.warning("Traffic API error for %s: HTTP %s -- using simulated", city, status)
         result = _simulate_traffic()

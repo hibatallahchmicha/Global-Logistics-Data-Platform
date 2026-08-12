@@ -18,7 +18,11 @@ from psycopg2.extras import execute_values
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, from_json, lit, to_timestamp, when
 from pyspark.sql.types import (
-    BooleanType, DoubleType, StringType, StructField, StructType,
+    BooleanType,
+    DoubleType,
+    StringType,
+    StructField,
+    StructType,
 )
 
 KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")

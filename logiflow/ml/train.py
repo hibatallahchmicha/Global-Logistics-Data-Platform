@@ -14,11 +14,13 @@ from pathlib import Path
 
 import joblib
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from common.config import settings
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score, roc_curve
@@ -26,8 +28,6 @@ from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sqlalchemy import create_engine, text
 from xgboost import XGBClassifier
-
-from common.config import settings
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)
@@ -154,6 +154,50 @@ def plot_results(results: dict, feature_names: list, y_test) -> str:
 
 
 def save_best_model(results, best_name, encoders, scaler, feature_names) -> Path:
+    path = MODELS_DIR / "delay_predictor.pkl"
+    previous_path = MODELS_DIR / "delay_predictor_previous.pkl"
+    new_roc_auc = results[best_name]["roc_auc"]
+
+    # If an existing model is present, attempt to compare ROC-AUC and back it up
+    if path.exists():
+        try:
+            previous = joblib.load(path)
+            previous_roc_auc = None
+            try:
+                previous_roc_auc = previous.get("metrics", {}).get("roc_auc")
+            except Exception:  # noqa: BLE001 -- best-effort comparison against previous model, never block a save
+                previous_roc_auc = None
+
+            if previous_roc_auc is not None:
+                if new_roc_auc < previous_roc_auc:
+                    log.warning(
+                        "New model ROC-AUC (%.3f) is WORSE than the current one (%.3f). "
+                        "Saving anyway (visibility over silently blocking retraining), "
+                        "but the previous model is backed up at %s",
+                        new_roc_auc,
+                        previous_roc_auc,
+                        previous_path,
+                    )
+                else:
+                    log.info(
+                        "New model ROC-AUC (%.3f) improves on the current one (%.3f)",
+                        new_roc_auc,
+                        previous_roc_auc,
+                    )
+                # keep exactly one rollback point
+                try:
+                    joblib.dump(previous, previous_path)
+                except Exception as e:  # noqa: BLE001 -- best-effort backup, never block a save
+                    log.warning("Failed to back up previous model: %s", e)
+            else:
+                log.warning("Previous model found but missing ROC-AUC metric; backing up anyway.")
+                try:
+                    joblib.dump(previous, previous_path)
+                except Exception as e:  # noqa: BLE001 -- best-effort backup, never block a save
+                    log.warning("Failed to back up previous model: %s", e)
+        except Exception as e:  # noqa: BLE001 -- best-effort comparison against previous model, never block a save
+            log.warning("Could not compare against previous model: %s", e)
+
     bundle = {
         "model": results[best_name]["model"],
         "encoders": encoders,
@@ -163,9 +207,15 @@ def save_best_model(results, best_name, encoders, scaler, feature_names) -> Path
         "trained_at": datetime.now().isoformat(),
         "metrics": {k: results[best_name][k] for k in ("accuracy", "roc_auc", "cv_score")},
     }
-    path = MODELS_DIR / "delay_predictor.pkl"
-    joblib.dump(bundle, path)
-    log.info("Saved best model (%s) -> %s | ROC-AUC=%.3f", best_name, path, results[best_name]["roc_auc"])
+
+    # Save the new bundle (overwrites `delay_predictor.pkl`)
+    try:
+        joblib.dump(bundle, path)
+        log.info("Saved best model (%s) -> %s | ROC-AUC=%.3f", best_name, path, new_roc_auc)
+    except Exception as e:
+        log.error("Failed to save new model: %s", e)
+        raise
+
     return path
 
 

@@ -15,10 +15,9 @@ import logging
 
 import pandas as pd
 import psycopg2
-from psycopg2.extras import execute_values
-
 from common.config import settings
 from common.storage import storage
+from psycopg2.extras import execute_values
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)

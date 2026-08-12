@@ -45,7 +45,7 @@ def task_etl(**context):
 
 
 def task_quality_check(**context):
-    from pipelines.quality_checks import run_all_checks, CRITICAL_CHECKS
+    from pipelines.quality_checks import CRITICAL_CHECKS, run_all_checks
     results = run_all_checks()
     failed = [k for k, v in results.items() if not v]
     critical_failures = [f for f in failed if f in CRITICAL_CHECKS]

@@ -11,12 +11,11 @@ local layout exactly (see Module 14 for the docker-compose build
 context change this requires).
 """
 
+from common.config import settings
 from fastapi import FastAPI, HTTPException, Query
+from ml.predict import predict_single
 from pydantic import BaseModel
 from sqlalchemy import create_engine, text
-
-from common.config import settings
-from ml.predict import predict_single
 
 app = FastAPI(title="LogiFlow API", version="2.0.0")
 engine = create_engine(settings.database_url)

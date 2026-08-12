@@ -16,10 +16,9 @@ import time
 import uuid
 from datetime import datetime
 
+from common.config import settings
 from kafka import KafkaProducer
 from kafka.errors import NoBrokersAvailable
-
-from common.config import settings
 
 EVENTS_PER_SECOND = float(os.getenv("EVENTS_PER_SECOND", "1"))
 
