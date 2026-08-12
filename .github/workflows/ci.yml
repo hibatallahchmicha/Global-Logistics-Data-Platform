@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff
+      - run: ruff check common pipelines ml services orchestration streaming
+
+  compose-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dummy .env for variable substitution only -- no real secrets
+        run: |
+          cat > .env << 'EOF'
+          POSTGRES_USER=ci
+          POSTGRES_PASSWORD=ci
+          POSTGRES_DB=ci
+          MINIO_ROOT_USER=ci
+          MINIO_ROOT_PASSWORD=ci
+          BUCKET_NAME=ci-bucket
+          AIRFLOW_SECRET_KEY=ci
+          AIRFLOW_USER=ci
+          AIRFLOW_PASSWORD=ci
+          AIRFLOW_FIRSTNAME=ci
+          AIRFLOW_LASTNAME=ci
+          AIRFLOW_EMAIL=ci@example.com
+          EOF
+      - name: Validate core compose file
+        run: docker compose -f docker-compose.yml config -q
+      - name: Validate merged compose files (core + streaming)
+        run: docker compose -f docker-compose.yml -f docker-compose.streaming.yml config -q
+
+  import-and-syntax-check:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_USER: ci_user
+      POSTGRES_PASSWORD: ci_password
+      POSTGRES_DB: ci_db
+      MINIO_ROOT_USER: ci_minio_user
+      MINIO_ROOT_PASSWORD: ci_minio_password
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install python-dotenv
+      - name: common.config -- real import, no network dependency
+        run: python -c "from common.config import settings; print('common.config OK')"
+      - name: Everything else -- syntax-only, these need live infra to actually import
+        run: |
+          python -c "import ast; [ast.parse(open(f).read()) for f in [
+            'common/storage.py',
+            'pipelines/generate_shipments.py', 'pipelines/etl.py', 'pipelines/quality_checks.py',
+            'ml/train.py', 'ml/predict.py',
+            'services/api/main.py', 'services/dashboard/app.py',
+            'orchestration/dags/logiflow_pipeline.py',
+            'streaming/kafka_producer.py', 'streaming/spark_streaming.py',
+          ]]; print('syntax OK across all modules')"
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pytest python-dotenv
+      - run: pytest tests/ -v

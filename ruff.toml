@@ -1,0 +1,6 @@
+[lint]
+# DTZ (timezone-aware datetime) is intentionally disabled: this project runs
+# as a single-timezone local/portfolio deployment with no cross-timezone
+# comparisons -- naive datetime.now() throughout is a deliberate simplicity
+# choice, not an oversight. Revisit if this ever runs across timezones.
+ignore = ["DTZ"]
