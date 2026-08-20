@@ -39,3 +39,5 @@ def test_database_url_builds_correctly(monkeypatch):
 
     importlib.reload(config_module)
     assert config_module.settings.database_url == "postgresql://testuser:testpass@localhost:5432/testdb"
+    assert config_module.settings.storage_backend == "minio"
+    assert config_module.settings.aws_region == "eu-north-1"

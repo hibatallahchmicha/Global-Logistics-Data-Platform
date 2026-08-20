@@ -19,6 +19,7 @@ Feeds into:
 """
 
 import argparse
+import io
 import logging
 import uuid
 from datetime import datetime, timedelta
@@ -298,15 +299,26 @@ def generate_batch(n: int, days_back: int) -> pd.DataFrame:
     return df
 
 
-def run(n: int = 50, days_back: int = 1) -> str:
+def run(n: int = 50, days_back: int = 1, fmt: str = "csv") -> str:
     df = generate_batch(n, days_back)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    object_key = f"raw/shipments_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-    csv_bytes = df.to_csv(index=False).encode("utf-8")
-    storage.upload_bytes(object_key, csv_bytes)
+    if fmt == "parquet":
+        # Columnar + compressed: far smaller on disk, and Athena scans only
+        # the columns a query actually touches instead of the whole file.
+        object_key = f"raw/shipments_{ts}.parquet"
+        buf = io.BytesIO()
+        df.to_parquet(buf, index=False, compression="snappy")
+        payload = buf.getvalue()
+        content_type = "application/octet-stream"
+    else:
+        object_key = f"raw/shipments_{ts}.csv"
+        payload = df.to_csv(index=False).encode("utf-8")
+        content_type = "text/csv"
 
-    log.info("Uploaded %d shipments (%.1f MB) -> %s/%s",
-              len(df), len(csv_bytes) / 1_048_576, settings.bucket_name, object_key)
+    storage.upload_bytes(object_key, payload, content_type)
+    log.info("Uploaded %d shipments (%.1f MB, %s) -> %s/%s",
+             len(df), len(payload) / 1_048_576, fmt, settings.bucket_name, object_key)
     return object_key
 
 
@@ -314,6 +326,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate synthetic LogiFlow shipments")
     parser.add_argument("--n", type=int, default=50, help="number of shipments to generate")
     parser.add_argument("--days-back", type=int, default=1, help="spread shipments over this many past days")
+    parser.add_argument("--format", choices=["csv", "parquet"], default="csv",
+                        help="csv for local dev, parquet for the S3 data lake")
     args = parser.parse_args()
-
-    run(n=args.n, days_back=args.days_back)
+    run(n=args.n, days_back=args.days_back, fmt=args.format)

@@ -28,3 +28,10 @@ Thumbs.db
 CHECKPOINTS.md
 
 METRICS_GLOSSARY.md
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+crash.log

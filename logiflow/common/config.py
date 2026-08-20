@@ -38,6 +38,10 @@ class Settings:
     minio_secret_key: str
     bucket_name: str
 
+    # --- Storage backend selection ---
+    storage_backend: str          # "minio" (local dev) or "s3" (AWS)
+    aws_region: str
+
     # --- Kafka (not used until the streaming modules, defined here anyway) ---
     kafka_bootstrap_servers: str
     kafka_topic: str
@@ -68,6 +72,8 @@ def _load_settings() -> Settings:
         minio_access_key=_require("MINIO_ROOT_USER"),
         minio_secret_key=_require("MINIO_ROOT_PASSWORD"),
         bucket_name=os.getenv("BUCKET_NAME", "logiflow-raw"),
+        storage_backend=os.getenv("STORAGE_BACKEND", "minio").lower(),
+        aws_region=os.getenv("AWS_REGION", "eu-north-1"),
 
         kafka_bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
         kafka_topic=os.getenv("KAFKA_TOPIC", "shipment_events"),
@@ -84,6 +90,7 @@ if __name__ == "__main__":
     masked = settings.database_url.replace(settings.postgres_password, "****")
     print("Postgres  ->", masked)
     print("MinIO     ->", settings.minio_endpoint, "| bucket:", settings.bucket_name)
+    print("Storage   ->", settings.storage_backend.upper(), "| bucket:", settings.bucket_name)
     print("Kafka     ->", settings.kafka_bootstrap_servers, "| topic:", settings.kafka_topic)
     print("Weather   ->", "configured" if settings.openweather_api_key else "not set (will simulate)")
     print("Traffic   ->", "configured" if settings.tomtom_api_key else "not set (will simulate)")

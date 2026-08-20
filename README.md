@@ -137,13 +137,21 @@ Global-Logistics-Data-Platform/
     └── docs/
         ├── architecture.md
         ├── data-model.md
-        └── setup-guide.md
+        ├── setup-guide.md
+        └── decisions.md
 ```
 
-> Legacy `mvp1-data-pipeline/`, `mvp2-analytics-layer/`, `mvp3-advanced/`, and
-> `mvp4-streaming/` folders are still present during the migration but are fully
-> superseded by the structure above and scheduled for removal once the streaming stack
-> is verified end-to-end against the new layout.
+The legacy `mvp1-4` chronological structure has been fully removed — the tree above is
+the entire project, one structure, no leftovers.
+
+## Documentation
+
+| Document | What it covers |
+|---|---|
+| [docs/architecture.md](logiflow/docs/architecture.md) | Component inventory, data flow, infrastructure notes |
+| [docs/data-model.md](logiflow/docs/data-model.md) | Full schema reference, table by table |
+| [docs/setup-guide.md](logiflow/docs/setup-guide.md) | Step-by-step local setup and troubleshooting |
+| [docs/decisions.md](logiflow/docs/decisions.md) | **Why** each major decision was made — the part a jury actually asks about |
 
 ---
 
