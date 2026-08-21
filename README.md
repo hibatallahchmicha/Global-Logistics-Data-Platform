@@ -1,4 +1,4 @@
-# LogiFlow — End-to-End Logistics Data Platform
+# LogiFlow - End-to-End Logistics Data Platform
 
 > A logistics analytics platform covering the full data lifecycle: synthetic generation with
 > live API enrichment, idempotent ELT into a Postgres star schema, an ML delay classifier,
